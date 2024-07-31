@@ -15,6 +15,7 @@
     "@emotion/styled": "^11.13.0",
     "axios": "^1.7.2",
     "framer-motion": "^11.3.19",
+    "lodash": "^4.17.21",
     "mdb-react-ui-kit": "^8.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

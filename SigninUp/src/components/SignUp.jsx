@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { debounce } from "lodash";
 import {
   Flex,
   Box,
@@ -137,8 +138,19 @@ export default function SignUp() {
       ...formData,
       [name]: value,
     });
-    validate(name, value);
+    if (name === "email") {
+      debounceValidateEmail(value);
+    } else {
+      validate(name, value);
+    }
   };
+
+  const debounceValidateEmail = useCallback(
+    debounce((value) => {
+      validate("email", value);
+    }, 500),
+    []
+  );
 
   const handleGenderChange = (value) => {
     setFormData({
@@ -337,15 +349,9 @@ export default function SignUp() {
                   onChange={handleGenderChange}
                 >
                   <Stack direction="row">
-                    <Radio value="male" borderColor={getBorderColor("gender")}>
-                      Male
-                    </Radio>
-                    <Radio
-                      value="female"
-                      borderColor={getBorderColor("gender")}
-                    >
-                      Female
-                    </Radio>
+                    <Radio value="male">Male</Radio>
+                    <Radio value="female">Female</Radio>
+                    <Radio value="other">Other</Radio>
                   </Stack>
                 </RadioGroup>
                 {errors.gender && <Text color="red.500">{errors.gender}</Text>}
@@ -432,12 +438,22 @@ export default function SignUp() {
                 )}
               </FormControl>
 
-              <Stack spacing={10}>
-                <Checkbox isChecked={isChecked} onChange={handleCheckboxChange}>
+              <FormControl display="flex" alignItems="center" mb={4}>
+                <Checkbox
+                  id="terms"
+                  isChecked={isChecked}
+                  onChange={handleCheckboxChange}
+                />
+                <FormLabel htmlFor="terms" mb="0" ml={2}>
                   I agree to the terms and conditions
-                </Checkbox>
+                </FormLabel>
+              </FormControl>
+
+              <Stack spacing={10} pt={2}>
                 <Button
                   type="submit"
+                  loadingText="Submitting"
+                  size="lg"
                   bg={"blue.400"}
                   color={"white"}
                   _hover={{
@@ -447,15 +463,15 @@ export default function SignUp() {
                   Sign up
                 </Button>
               </Stack>
+              <Stack pt={6}>
+                <Text align={"center"}>
+                  Already a user?{" "}
+                  <Link color={"blue.400"} href="/login">
+                    Login
+                  </Link>
+                </Text>
+              </Stack>
             </form>
-            <Stack pt={6}>
-              <Text align={"center"}>
-                Already a user?{" "}
-                <Link href="/" color={"blue.400"}>
-                  Login
-                </Link>
-              </Text>
-            </Stack>
           </Stack>
         </Box>
       </Stack>

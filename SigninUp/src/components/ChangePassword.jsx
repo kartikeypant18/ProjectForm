@@ -1,0 +1,176 @@
+"use client";
+import React, { useState } from "react";
+import axios from "axios";
+import {
+  Flex,
+  Box,
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  Stack,
+  Heading,
+  useColorModeValue,
+  useToast,
+} from "@chakra-ui/react";
+
+export default function ChangePassword() {
+  const toast = useToast(); // Initialize toast
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevent default form submission
+    const { email, password, confirmPassword } = formData;
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Passwords do not match.",
+        description: "Please make sure both passwords are the same.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      // Check if the email exists in the database
+      const emailResponse = await axios.post(
+        "http://localhost:5000/api/checkEmail",
+        { email }
+      );
+
+      if (!emailResponse.data.exists) {
+        toast({
+          title: "Email not found.",
+          description: "Please enter a valid email.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      // Make an API request to update the password
+      const response = await axios.post(
+        "http://localhost:5000/api/update-password",
+        { email, password }
+      );
+
+      if (response.data.success) {
+        toast({
+          title: "Password updated.",
+          description: "Your password has been updated successfully.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        setTimeout(() => {
+          window.location.href = "/"; // Redirect to login page
+        }, 2000); // Delay for 3 seconds
+        // Redirect to login page or home page
+      } else {
+        toast({
+          title: "Error.",
+          description: "Failed to update password. Please try again.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error.",
+        description: "An error occurred. Please try again later.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  return (
+    <Flex
+      minH={"100vh"}
+      justify={"center"}
+      bg={useColorModeValue("gray.50", "gray.800")}
+    >
+      <Stack
+        spacing={8}
+        mx={"auto"}
+        maxW={"lg"}
+        py={12}
+        px={6}
+        style={{ width: "441px" }}
+      >
+        <Stack align={"center"}>
+          <Heading fontSize={"4xl"} textAlign={"center"}>
+            Create New Password
+          </Heading>
+        </Stack>
+        <Box
+          rounded={"lg"}
+          bg={useColorModeValue("white", "gray.700")}
+          boxShadow={"lg"}
+          p={8}
+        >
+          <Stack>
+            <form onSubmit={handleSubmit}>
+              <FormControl id="email" mb={4}>
+                <FormLabel>Email</FormLabel>
+                <Input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+              </FormControl>
+              <FormControl id="password" mb={4}>
+                <FormLabel>Password</FormLabel>
+                <Input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+              </FormControl>
+
+              <FormControl id="confirmPassword" mb={4}>
+                <FormLabel>Confirm Password</FormLabel>
+                <Input
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                />
+              </FormControl>
+
+              <Button
+                type="submit"
+                colorScheme="teal"
+                size="lg"
+                width="full"
+                style={{ marginTop: "1rem" }}
+              >
+                Submit
+              </Button>
+            </form>
+          </Stack>
+        </Box>
+      </Stack>
+    </Flex>
+  );
+}

@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const userRouter = require("./routes/userROuter.js");
+const userRouter = require("./routes/userRoutes");
 require("dotenv").config();
 
 const app = express();
@@ -14,5 +14,5 @@ app.use(bodyParser.json());
 app.use("/api", userRouter);
 
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+    console.log(`Server running on http://localhost:${port}`);
 });

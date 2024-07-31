@@ -14,11 +14,11 @@ import {
   useColorModeValue,
   Link,
   useToast,
-  Checkbox, // Import useToast
+  Checkbox,
 } from "@chakra-ui/react";
 
 export default function Login() {
-  const toast = useToast(); // Initialize toast
+  const toast = useToast();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -35,11 +35,33 @@ export default function Login() {
       ...formData,
       [name]: value,
     });
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
+  };
+
+  const validate = () => {
+    let newErrors = {};
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email is invalid";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!errors.email && !errors.password) {
+    if (validate()) {
       axios
         .post("http://localhost:5000/api/login", formData)
         .then((response) => {
@@ -50,7 +72,8 @@ export default function Login() {
             duration: 5000,
             isClosable: true,
           });
-          // Handle successful login (e.g., redirect, store user data, etc.)
+          localStorage.setItem("token", response.data.token); // Store token in local storage
+          window.location.href = "/"; // Redirect to home or dashboard
         })
         .catch((error) => {
           console.error("There was an error logging in!", error);
@@ -101,6 +124,7 @@ export default function Login() {
                   onChange={handleChange}
                   mb={4}
                 />
+                {errors.email && <Text color="red.500">{errors.email}</Text>}
               </FormControl>
 
               <FormControl id="password" isInvalid={!!errors.password} mb={4}>
@@ -111,7 +135,11 @@ export default function Login() {
                   value={formData.password}
                   onChange={handleChange}
                 />
+                {errors.password && (
+                  <Text color="red.500">{errors.password}</Text>
+                )}
               </FormControl>
+
               <Stack spacing={10}>
                 <Stack
                   direction={{ base: "column", sm: "row" }}
@@ -119,9 +147,12 @@ export default function Login() {
                   justify={"space-between"}
                 >
                   <Checkbox>Remember me</Checkbox>
-                  <Link color={"blue.400"}>Forgot password?</Link>
+                  <Link href="/newPassword" color={"blue.400"}>
+                    Forgot password?
+                  </Link>
                 </Stack>
               </Stack>
+
               <Button
                 type="submit"
                 colorScheme="teal"
@@ -131,15 +162,15 @@ export default function Login() {
               >
                 Login
               </Button>
+              <Stack pt={6}>
+                <Text align={"center"}>
+                  Create a new account?{" "}
+                  <Link href="/signUp" color={"blue.400"}>
+                    Sign Up
+                  </Link>
+                </Text>
+              </Stack>
             </form>
-            <Stack pt={6}>
-              <Text align={"center"}>
-                Create a new account?{" "}
-                <Link href="/signUp" color={"blue.400"}>
-                  Sign Up
-                </Link>
-              </Text>
-            </Stack>
           </Stack>
         </Box>
       </Stack>

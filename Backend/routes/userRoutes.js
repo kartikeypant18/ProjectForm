@@ -1,10 +1,13 @@
 const express = require("express");
 const {
-  fetchCountries,
-  fetchStates,
-  registerStudent,
-  loginStudent, // Import the login function
+    fetchCountries,
+    fetchStates,
+    registerStudent,
+    loginStudent,
+    checkEmail,
+    updatePassword
 } = require("../controllers/userController");
+const authenticateToken = require("../middlewares/authenticate");
 
 const router = express.Router();
 
@@ -18,6 +21,12 @@ router.get("/states", fetchStates);
 router.post("/register", registerStudent);
 
 // Login student
-router.post("/login", loginStudent); // Add the login route
+router.post("/login", loginStudent);
+
+// Check if email exists
+router.post("/checkEmail", checkEmail);
+
+// Update password
+router.post("/update-password", updatePassword);
 
 module.exports = router;
