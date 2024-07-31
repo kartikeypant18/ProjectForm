@@ -1,3 +1,4 @@
+// ChangePassword.jsx
 "use client";
 import React, { useState } from "react";
 import axios from "axios";
@@ -14,10 +15,9 @@ import {
   useToast,
 } from "@chakra-ui/react";
 
-export default function ChangePassword() {
-  const toast = useToast(); // Initialize toast
+export default function ChangePassword({ email }) {
+  const toast = useToast();
   const [formData, setFormData] = useState({
-    email: "",
     password: "",
     confirmPassword: "",
   });
@@ -31,8 +31,8 @@ export default function ChangePassword() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission
-    const { email, password, confirmPassword } = formData;
+    e.preventDefault();
+    const { password, confirmPassword } = formData;
 
     if (password !== confirmPassword) {
       toast({
@@ -46,27 +46,9 @@ export default function ChangePassword() {
     }
 
     try {
-      // Check if the email exists in the database
-      const emailResponse = await axios.post(
-        "http://localhost:5000/api/checkEmail",
-        { email }
-      );
-
-      if (!emailResponse.data.exists) {
-        toast({
-          title: "Email not found.",
-          description: "Please enter a valid email.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-        return;
-      }
-
-      // Make an API request to update the password
       const response = await axios.post(
-        "http://localhost:5000/api/update-password",
-        { email, password }
+        "http://localhost:5000/api/changepassword",
+        { email, password } // Include email in the request
       );
 
       if (response.data.success) {
@@ -79,8 +61,7 @@ export default function ChangePassword() {
         });
         setTimeout(() => {
           window.location.href = "/"; // Redirect to login page
-        }, 2000); // Delay for 3 seconds
-        // Redirect to login page or home page
+        }, 2000);
       } else {
         toast({
           title: "Error.",
@@ -129,15 +110,6 @@ export default function ChangePassword() {
         >
           <Stack>
             <form onSubmit={handleSubmit}>
-              <FormControl id="email" mb={4}>
-                <FormLabel>Email</FormLabel>
-                <Input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </FormControl>
               <FormControl id="password" mb={4}>
                 <FormLabel>Password</FormLabel>
                 <Input

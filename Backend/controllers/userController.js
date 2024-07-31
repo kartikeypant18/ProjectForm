@@ -1,6 +1,7 @@
 const db = require("../config/db.js");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const generateToken = require('../middlewares/generateTokenAndCookies.js'); 
 
 // Fetch countries
 const fetchCountries = (req, res) => {
@@ -56,29 +57,46 @@ const validateRegistrationData = (data) => {
     return errors;
 };
 
-// Register student
-const registerStudent = (req, res) => {
-    const { name, email, country_code, mobile_number, gender, country_id, state_id, password } = req.body;
+// Register user
+const signupUser = async (req, res) => {
+    const { user_name, user_email, user_country_code, user_mobile_number, user_gender, country_id, state_id, user_password } = req.body;
 
-    // Validate registration data
-    const validationErrors = validateRegistrationData(req.body);
-    if (Object.keys(validationErrors).length > 0) {
-        return res.status(400).json({ errors: validationErrors });
-    }
+    console.log('Request Body:', req.body); // Debugging line
+    console.log('User Password:', user_password); // Debugging line
 
-    // Hash the password before storing
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        db.query('SELECT * FROM users WHERE user_email = ?', [user_email], async (err, results) => {
+            if (err) throw err;
 
-        db.query(
-            "INSERT INTO students (name, email, country_code, mobile_number, gender, country_id, state_id, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [name, email, country_code, mobile_number, gender, country_id, state_id, hashedPassword],
-            (err, results) => {
-                if (err) return res.status(500).json({ error: err.message });
-                res.status(201).json({ id: results.insertId });
+            if (results.length > 0) {
+                return res.status(400).json({ message: 'User already exists' });
+            } else {
+                if (!user_password) {
+                    return res.status(400).json({ message: 'Password is required' }); // Validate password presence
+                }
+                const hashedPassword = await bcrypt.hash(user_password, 10);
+                const newUser = {
+                    user_name,
+                    user_email,
+                    user_country_code,
+                    user_mobile_number,
+                    user_gender,
+                    country_id,
+                    state_id,
+                    user_password: hashedPassword,
+                    user_created_at: new Date(),
+                };
+
+                db.query('INSERT INTO users SET ?', newUser, (err, result) => {
+                    if (err) throw err;
+                    const token = generateToken(result.insertId);
+                    res.status(201).json({ token });
+                });
             }
-        );
-    });
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
 };
 
 // Validate login data
@@ -95,74 +113,112 @@ const validateLoginData = (data) => {
     return errors;
 };
 
-// Login student
-const loginStudent = (req, res) => {
-    const { email, password } = req.body;
+// Login user
+const loginUser = async (req, res) => {
+    const { user_email, user_password } = req.body;
 
-    // Validate login data
-    const validationErrors = validateLoginData(req.body);
-    if (Object.keys(validationErrors).length > 0) {
-        return res.status(400).json({ errors: validationErrors });
-    }
+    try {
+        db.query('SELECT * FROM users WHERE user_email = ?', [user_email], async (err, results) => {
+            if (err) throw err;
 
-    // Fetch user based on email
-    db.query("SELECT * FROM students WHERE email = ?", [email], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-
-        if (results.length === 0) {
-            return res.status(401).json({ message: "Invalid email or password" });
-        }
-
-        const user = results[0];
-
-        // Compare provided password with stored hashed password
-        bcrypt.compare(password, user.password, (err, isMatch) => {
-            if (err) return res.status(500).json({ error: err.message });
-
-            if (!isMatch) {
-                return res.status(401).json({ message: "Invalid password" });
+            if (results.length === 0) {
+                return res.status(400).json({ message: 'Invalid email or password' });
             }
 
-            // Successful login, generate a token
-            const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-            res.status(200).json({ message: "Login successful", userId: user.id, token });
+            const user = results[0];
+            const isMatch = await bcrypt.compare(user_password, user.user_password);
+
+            if (!isMatch) {
+                return res.status(400).json({ message: 'Invalid email or password' });
+            }
+
+            const token = generateToken(user.user_id);
+            res.json({ token });
         });
-    });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
 };
 
+// Check if email exists
 const checkEmail = (req, res) => {
     const { email } = req.body;
-    const query = "SELECT * FROM students WHERE email = ?";
-    db.query(query, [email], (err, results) => {
-      if (err) return res.status(500).json({ success: false });
-      if (results.length > 0) {
-        return res.json({ exists: true });
-      } else {
-        return res.json({ exists: false });
-      }
-    });
-  }
+
+    try {
+        db.query('SELECT * FROM users WHERE user_email = ?', [email], (err, results) => {
+            if (err) throw err;
+
+            if (results.length === 0) {
+                return res.status(400).json({ message: 'Email not found', exists: false });
+            }
+
+            const token = generateToken(results[0].user_id); // Use user_id instead of id
+            res.json({ exists: true, token, userId: results[0].user_id });
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
 
 // Update password
-const updatePassword = async (req, res) => {
-    const { email, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10); // Hash the new password
-    const query = "UPDATE students SET password = ? WHERE email = ?";
-    db.query(query, [hashedPassword, email], (err, results) => {
-      if (err) return res.status(500).json({ success: false });
-      if (results.affectedRows > 0) {
-        return res.json({ success: true });
-      } else {
-        return res.json({ success: false });
-      }
+const changePassword = async (req, res) => {
+    const { email, password } = req.body; // Get email and new password from request body
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        db.query('UPDATE users SET user_password = ? WHERE user_email = ?', [hashedPassword, email], (err, result) => {
+            if (err) throw err;
+
+            if (result.affectedRows === 0) {
+                return res.status(400).json({ message: 'Failed to update password. User not found.' });
+            }
+
+            res.json({ success: true, message: 'Password updated successfully' });
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Get all users
+const getUsers = (req, res) => {
+    const query = `
+      SELECT 
+        users.user_id, 
+        users.user_name, 
+        users.user_email, 
+        CONCAT(users.user_country_code, ' ', users.user_mobile_number) AS contact_number, 
+        users.user_gender, 
+        country.country_name AS country, 
+        states.state_name AS state, 
+        users.user_created_at AS created_at
+      FROM 
+        users 
+      JOIN 
+        country ON users.country_id = country.country_id 
+      JOIN 
+        states ON users.state_id = states.state_id
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error("Error fetching users:", err);
+            return res.status(500).json({ message: "Internal Server Error" });
+        }
+        res.json(results);
     });
-  }
+};
 
 module.exports = {
     fetchCountries,
     fetchStates,
-    registerStudent,
-    loginStudent,
+    signupUser,
+    loginUser,
     checkEmail,
-    updatePassword,
+    changePassword,
+    getUsers,
 };

@@ -24,29 +24,43 @@ import {
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    country_code: "",
-    mobile_number: "",
-    gender: "",
+    user_name: "", // updated to match backend expected field
+    user_email: "", // updated to match backend expected field
+    user_country_code: "", // updated to match backend expected field
+    user_mobile_number: "", // updated to match backend expected field
+    user_gender: "", // updated to match backend expected field
     country_id: "",
     state_id: "",
-    password: "",
+    user_password: "", // updated to match backend expected field
     confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({
-    name: "",
-    email: "",
-    country_code: "",
-    mobile_number: "",
-    gender: "",
+    user_name: "", // updated to match backend expected field
+    user_email: "",
+    user_country_code: "",
+    user_mobile_number: "",
+    user_gender: "",
     country_id: "",
     state_id: "",
-    password: "",
+    user_password: "", // updated to match backend expected field
     confirmPassword: "",
   });
-
+  const resetForm = () => {
+    setFormData({
+      user_name: "",
+      user_email: "",
+      user_country_code: "",
+      user_mobile_number: "",
+      user_gender: "",
+      country_id: "",
+      state_id: "",
+      user_password: "",
+      confirmPassword: "",
+    });
+    setErrors({});
+    setIsChecked(false);
+  };
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [isChecked, setIsChecked] = useState(false);
@@ -83,21 +97,21 @@ export default function SignUp() {
   const validate = (name, value) => {
     let error = "";
     switch (name) {
-      case "name":
+      case "user_name":
         if (!value) error = "Name is required";
         break;
-      case "email":
+      case "user_email":
         if (!value) error = "Email is required";
         else if (!/\S+@\S+\.\S+/.test(value)) error = "Email is invalid";
         break;
-      case "country_code":
+      case "user_country_code":
         if (!value) error = "Country code is required";
         break;
-      case "mobile_number":
+      case "user_mobile_number":
         if (!value) error = "Mobile number is required";
         else if (!/^\d{1,15}$/.test(value)) error = "Mobile number is invalid";
         break;
-      case "gender":
+      case "user_gender":
         if (!value) error = "Gender is required";
         break;
       case "country_id":
@@ -106,7 +120,7 @@ export default function SignUp() {
       case "state_id":
         if (!value) error = "State is required";
         break;
-      case "password":
+      case "user_password":
         if (!value) error = "Password is required";
         else if (value.length < 8 || value.length > 18)
           error = "Password must be between 8 to 18 characters";
@@ -121,7 +135,8 @@ export default function SignUp() {
         break;
       case "confirmPassword":
         if (!value) error = "Confirm password is required";
-        else if (value !== formData.password) error = "Passwords do not match";
+        else if (value !== formData.user_password)
+          error = "Passwords do not match";
         break;
       default:
         break;
@@ -138,7 +153,7 @@ export default function SignUp() {
       ...formData,
       [name]: value,
     });
-    if (name === "email") {
+    if (name === "user_email") {
       debounceValidateEmail(value);
     } else {
       validate(name, value);
@@ -147,7 +162,7 @@ export default function SignUp() {
 
   const debounceValidateEmail = useCallback(
     debounce((value) => {
-      validate("email", value);
+      validate("user_email", value);
     }, 500),
     []
   );
@@ -155,9 +170,9 @@ export default function SignUp() {
   const handleGenderChange = (value) => {
     setFormData({
       ...formData,
-      gender: value,
+      user_gender: value, // updated to match backend expected field
     });
-    validate("gender", value);
+    validate("user_gender", value);
   };
 
   const handleCheckboxChange = (e) => {
@@ -185,31 +200,35 @@ export default function SignUp() {
 
     if (isValid) {
       axios
-        .post("http://localhost:5000/api/register", formData)
+        .post("http://localhost:5000/api/signup", formData) // updated endpoint to match the backend
         .then((response) => {
           toast({
             title: "Success",
-            description: "Student registered successfully",
+            description: "User registered successfully",
             status: "success",
             duration: 5000,
             isClosable: true,
           });
+          resetForm();
         })
         .catch((error) => {
           console.error("There was an error registering the student!", error);
           toast({
             title: "Error",
-            description: "There was an error registering the student",
+            description:
+              error.response?.data?.message ||
+              "There was an error registering the student",
             status: "error",
             duration: 5000,
             isClosable: true,
           });
+          resetForm();
         });
     }
   };
 
   const getBorderColor = (name) => {
-    return errors[name] ? "red" : formData[name] ? "green" : "white";
+    return errors[name] ? "red" : formData[name] ? "green" : "gray.500";
   };
 
   return (
@@ -233,42 +252,50 @@ export default function SignUp() {
         >
           <Stack spacing={4}>
             <form onSubmit={handleSubmit}>
-              <FormControl id="name" isInvalid={!!errors.name} mb={4}>
+              <FormControl id="user_name" isInvalid={!!errors.user_name} mb={4}>
                 <FormLabel>Name</FormLabel>
                 <Input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="user_name"
+                  value={formData.user_name}
                   onChange={handleChange}
-                  borderColor={getBorderColor("name")}
+                  borderColor={getBorderColor("user_name")}
                 />
-                {errors.name && <Text color="red.500">{errors.name}</Text>}
+                {errors.user_name && (
+                  <Text color="red.500">{errors.user_name}</Text>
+                )}
               </FormControl>
 
-              <FormControl id="email" isInvalid={!!errors.email} mb={4}>
+              <FormControl
+                id="user_email"
+                isInvalid={!!errors.user_email}
+                mb={4}
+              >
                 <FormLabel>Email address</FormLabel>
                 <Input
                   type="email"
-                  name="email"
-                  value={formData.email}
+                  name="user_email"
+                  value={formData.user_email}
                   onChange={handleChange}
-                  borderColor={getBorderColor("email")}
+                  borderColor={getBorderColor("user_email")}
                 />
-                {errors.email && <Text color="red.500">{errors.email}</Text>}
+                {errors.user_email && (
+                  <Text color="red.500">{errors.user_email}</Text>
+                )}
               </FormControl>
 
               <Flex mb={4}>
                 <FormControl
-                  id="country_code"
-                  isInvalid={!!errors.country_code}
+                  id="user_country_code"
+                  isInvalid={!!errors.user_country_code}
                   mr={4}
                 >
                   <FormLabel>Country Code</FormLabel>
                   <Select
-                    name="country_code"
-                    value={formData.country_code}
+                    name="user_country_code"
+                    value={formData.user_country_code}
                     onChange={handleChange}
-                    borderColor={getBorderColor("country_code")}
+                    borderColor={getBorderColor("user_country_code")}
                   >
                     <option value="">Country Code</option>
                     <option value="1">(+1) USA</option>
@@ -317,44 +344,52 @@ export default function SignUp() {
                     <option value="58">(+58) VEN</option>
                     <option value="57">(+57) COL</option>
                     <option value="354">(+354) ISL</option>
+                    {/* Add more options as needed */}
                   </Select>
-                  {errors.country_code && (
-                    <Text color="red.500">{errors.country_code}</Text>
+                  {errors.user_country_code && (
+                    <Text color="red.500">{errors.user_country_code}</Text>
                   )}
                 </FormControl>
 
                 <FormControl
-                  id="mobile_number"
-                  isInvalid={!!errors.mobile_number}
+                  id="user_mobile_number"
+                  isInvalid={!!errors.user_mobile_number}
                 >
                   <FormLabel>Mobile Number</FormLabel>
                   <Input
                     type="text"
-                    name="mobile_number"
-                    value={formData.mobile_number}
+                    name="user_mobile_number"
+                    value={formData.user_mobile_number}
                     onChange={handleChange}
-                    borderColor={getBorderColor("mobile_number")}
+                    borderColor={getBorderColor("user_mobile_number")}
                   />
-                  {errors.mobile_number && (
-                    <Text color="red.500">{errors.mobile_number}</Text>
+                  {errors.user_mobile_number && (
+                    <Text color="red.500">{errors.user_mobile_number}</Text>
                   )}
                 </FormControl>
               </Flex>
 
-              <FormControl id="gender" isInvalid={!!errors.gender} mb={4}>
+              <FormControl id="user_gender" mb={4}>
                 <FormLabel>Gender</FormLabel>
                 <RadioGroup
-                  name="gender"
-                  value={formData.gender}
                   onChange={handleGenderChange}
+                  value={formData.user_gender}
                 >
                   <Stack direction="row">
-                    <Radio value="male">Male</Radio>
-                    <Radio value="female">Female</Radio>
-                    <Radio value="other">Other</Radio>
+                    <Radio value="male" borderColor="gray.500">
+                      Male
+                    </Radio>
+                    <Radio value="female" borderColor="gray.500">
+                      Female
+                    </Radio>
+                    <Radio value="other" borderColor="gray.500">
+                      Other
+                    </Radio>
                   </Stack>
                 </RadioGroup>
-                {errors.gender && <Text color="red.500">{errors.gender}</Text>}
+                {errors.user_gender && (
+                  <Text color="red.500">{errors.user_gender}</Text>
+                )}
               </FormControl>
 
               <Flex mb={4}>
@@ -405,18 +440,21 @@ export default function SignUp() {
                   )}
                 </FormControl>
               </Flex>
-
-              <FormControl id="password" isInvalid={!!errors.password} mb={4}>
+              <FormControl
+                id="user_password"
+                isInvalid={!!errors.user_password}
+                mb={4}
+              >
                 <FormLabel>Password</FormLabel>
                 <Input
                   type="password"
-                  name="password"
-                  value={formData.password}
+                  name="user_password"
+                  value={formData.user_password}
                   onChange={handleChange}
-                  borderColor={getBorderColor("password")}
+                  borderColor={getBorderColor("user_password")}
                 />
-                {errors.password && (
-                  <Text color="red.500">{errors.password}</Text>
+                {errors.user_password && (
+                  <Text color="red.500">{errors.user_password}</Text>
                 )}
               </FormControl>
 
@@ -438,40 +476,29 @@ export default function SignUp() {
                 )}
               </FormControl>
 
-              <FormControl display="flex" alignItems="center" mb={4}>
-                <Checkbox
-                  id="terms"
-                  isChecked={isChecked}
-                  onChange={handleCheckboxChange}
-                />
-                <FormLabel htmlFor="terms" mb="0" ml={2}>
-                  I agree to the terms and conditions
-                </FormLabel>
-              </FormControl>
+              <Checkbox
+                isChecked={isChecked}
+                onChange={handleCheckboxChange}
+                mb={4}
+                borderColor="gray.500" // Use Chakra's color scheme
+              >
+                I agree to the terms and conditions
+              </Checkbox>
 
-              <Stack spacing={10} pt={2}>
-                <Button
-                  type="submit"
-                  loadingText="Submitting"
-                  size="lg"
-                  bg={"blue.400"}
-                  color={"white"}
-                  _hover={{
-                    bg: "blue.500",
-                  }}
-                >
+              <Stack spacing={10}>
+                <Button type="submit" colorScheme="teal">
                   Sign up
                 </Button>
               </Stack>
-              <Stack pt={6}>
-                <Text align={"center"}>
-                  Already a user?{" "}
-                  <Link color={"blue.400"} href="/login">
-                    Login
-                  </Link>
-                </Text>
-              </Stack>
             </form>
+            <Center>
+              <Text fontSize={"sm"}>
+                Already a user?{" "}
+                <Link color={"blue.400"} href="/">
+                  Login
+                </Link>
+              </Text>
+            </Center>
           </Stack>
         </Box>
       </Stack>

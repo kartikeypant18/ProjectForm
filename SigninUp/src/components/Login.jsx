@@ -62,8 +62,16 @@ export default function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
+      // Change the keys here to match your backend
+      const loginData = {
+        user_email: formData.email,
+        user_password: formData.password,
+      };
+
+      console.log("Login Data:", loginData); // Log the data being sent
+
       axios
-        .post("http://localhost:5000/api/login", formData)
+        .post("http://localhost:5000/api/login", loginData)
         .then((response) => {
           toast({
             title: "Login Successful",
@@ -73,17 +81,29 @@ export default function Login() {
             isClosable: true,
           });
           localStorage.setItem("token", response.data.token); // Store token in local storage
-          window.location.href = "/"; // Redirect to home or dashboard
+          window.location.href = "/homepage"; // Redirect to home or dashboard
         })
         .catch((error) => {
           console.error("There was an error logging in!", error);
-          toast({
-            title: "Login Failed",
-            description: error.response?.data?.message || "An error occurred",
-            status: "error",
-            duration: 5000,
-            isClosable: true,
-          });
+          if (error.response) {
+            console.error("Error response:", error.response.data); // Log the error response
+            toast({
+              title: "Login Failed",
+              description: error.response.data.message || "An error occurred",
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+            });
+          } else {
+            console.error("Error:", error.message);
+            toast({
+              title: "Login Failed",
+              description: "An error occurred while trying to log in",
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+            });
+          }
         });
     }
   };
@@ -147,7 +167,7 @@ export default function Login() {
                   justify={"space-between"}
                 >
                   <Checkbox>Remember me</Checkbox>
-                  <Link href="/newPassword" color={"blue.400"}>
+                  <Link href="/forgotPassword" color={"blue.400"}>
                     Forgot password?
                   </Link>
                 </Stack>
