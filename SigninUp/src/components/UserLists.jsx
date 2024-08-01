@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { background } from "@chakra-ui/react";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -27,17 +26,22 @@ const UserList = () => {
     console.log(`Edit user with ID: ${userId}`);
   };
 
-  const handleDelete = async (userId) => {
+  const handleDelete = (userId) => {
     // Handle the delete action
     if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        await axios.delete(`http://localhost:5000/api/users/${userId}`); // Adjust the endpoint as needed
-        setUsers(users.filter((user) => user.user_id !== userId)); // Remove the user from the list
-      } catch (error) {
-        console.error("Failed to delete user:", error);
-      }
+      setUsers(users.filter((user) => user.user_id !== userId)); // Remove the user from the list
     }
   };
+
+  const totalUsers = users.length;
+  const totalMales = users.filter((user) => user.user_gender === "male").length;
+  const totalFemales = users.filter(
+    (user) => user.user_gender === "female"
+  ).length;
+  const today = new Date().toLocaleDateString();
+  const totalCreatedToday = users.filter(
+    (user) => new Date(user.created_at).toLocaleDateString() === today
+  ).length;
 
   if (loading) return <div style={{ marginTop: "40px" }}>Loading...</div>;
   if (error) return <div style={{ marginTop: "40px" }}>Error: {error}</div>;
@@ -49,7 +53,6 @@ const UserList = () => {
         marginTop: "0px",
         padding: "20px",
         backgroundColor: "#f8f9fa",
-        borderRadius: "8px",
       }}
     >
       <div>
@@ -64,6 +67,78 @@ const UserList = () => {
         >
           User List
         </h1>
+      </div>
+      <div
+        style={{
+          background: "grey",
+          height: "6rem",
+          padding: "5px",
+          marginTop: "-1rem",
+          display: "flex",
+          justifyContent: "space-around",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            background: "white",
+            padding: "10px",
+            height: "6rem",
+            boxShadow: " 4px 2px 8px rgba(0, 0, 0, 0.4)",
+            width: "10rem",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          Total Users: {totalUsers}
+        </div>
+        <div
+          style={{
+            background: "white",
+            padding: "10px",
+            height: "6rem",
+            boxShadow: " 4px 2px 8px rgba(0, 0, 0, 0.4)",
+            width: "10rem",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          Total Males: {totalMales}
+        </div>
+        <div
+          style={{
+            background: "white",
+            padding: "10px",
+            height: "6rem",
+            boxShadow: " 4px 2px 8px rgba(0, 0, 0, 0.4)",
+            width: "10rem",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          Total Females: {totalFemales}
+        </div>
+        <div
+          style={{
+            background: "white",
+            padding: "10px",
+            height: "6rem",
+            boxShadow: " 4px 2px 8px rgba(0, 0, 0, 0.4)",
+            width: "10rem",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          Created Today: {totalCreatedToday}
+        </div>
       </div>
       <div className="search-bar" style={{ marginTop: "2rem" }}>
         <div

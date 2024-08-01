@@ -344,7 +344,6 @@ export default function SignUp() {
                     <option value="58">(+58) VEN</option>
                     <option value="57">(+57) COL</option>
                     <option value="354">(+354) ISL</option>
-                    {/* Add more options as needed */}
                   </Select>
                   {errors.user_country_code && (
                     <Text color="red.500">{errors.user_country_code}</Text>
