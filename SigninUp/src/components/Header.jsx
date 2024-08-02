@@ -1,19 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button, useToast } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-const Header = ({ handleNavigation }) => {
+const Header = ({ handleNavigation, activeItem }) => {
   const toast = useToast();
-  const navigate = useNavigate(); // Use the navigate hook
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear any authentication tokens or user data
-    localStorage.removeItem("token"); // Adjust based on how you store your tokens
-
-    // Optionally, you can also clear the entire local storage
+    localStorage.removeItem("token");
     localStorage.clear();
 
-    // Show success toast
     toast({
       title: "Logged out successfully.",
       description: "You have been logged out.",
@@ -22,8 +18,7 @@ const Header = ({ handleNavigation }) => {
       isClosable: true,
     });
 
-    // Redirect to login page
-    navigate("/"); // Redirect to the login page
+    navigate("/");
   };
 
   const navItems = [
@@ -35,6 +30,10 @@ const Header = ({ handleNavigation }) => {
     { label: "Manage Templates", component: "ManageTemplates" },
     { label: "Settings", component: "Settings" },
   ];
+
+  const handleItemClick = (component) => {
+    handleNavigation(component);
+  };
 
   return (
     <div className="header" style={{ height: "180px" }}>
@@ -51,7 +50,7 @@ const Header = ({ handleNavigation }) => {
           background: "white",
           color: "black",
           marginTop: "90px",
-          marginRight: "17.3rem",
+          marginRight: "2.8rem",
         }}
       >
         <ul
@@ -60,7 +59,6 @@ const Header = ({ handleNavigation }) => {
             listStyle: "none",
             padding: "2px",
             margin: "8px",
-
             width: "100%",
           }}
         >
@@ -68,8 +66,18 @@ const Header = ({ handleNavigation }) => {
             <li key={item.label} style={{ marginRight: "20px" }}>
               <Button
                 variant="link"
-                onClick={() => handleNavigation(item.component)}
-                style={{ padding: 0, color: "black" }}
+                onClick={() => handleItemClick(item.component)}
+                style={{
+                  padding: "0.5rem 1rem",
+                  fontWeight: item.component === activeItem ? "bold" : "normal",
+                  border:
+                    item.component === activeItem ? "2px solid black" : "none",
+                  borderRadius: "4px",
+                  transition: "transform 0.2s",
+                  transform:
+                    item.component === activeItem ? "scale(1.1)" : "scale(1)",
+                  color: "black", // Ensure the text color is always black
+                }}
               >
                 {item.label}
               </Button>

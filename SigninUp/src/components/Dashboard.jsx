@@ -132,7 +132,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div>
+    <div style={{ display: "flex" }}>
       <HighchartsReact highcharts={Highcharts} options={pieChartOptions} />
       <HighchartsReact highcharts={Highcharts} options={lineChartOptions} />
     </div>

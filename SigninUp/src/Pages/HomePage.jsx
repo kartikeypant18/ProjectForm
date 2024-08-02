@@ -3,11 +3,10 @@ import Sidebar from "../components/SideBar";
 import Header from "../components/Header";
 import UserList from "../components/UserLists";
 import Dashboard from "../components/Dashboard"; // Import the Dashboard component
-
 import "../App.css";
 
 const HomePage = () => {
-  const [currentComponent, setCurrentComponent] = useState("UserList"); // Default component to show
+  const [currentComponent, setCurrentComponent] = useState("Users"); // Default component to show
 
   const renderComponent = () => {
     switch (currentComponent) {
@@ -26,9 +25,15 @@ const HomePage = () => {
 
   return (
     <div className="app">
-      <Header handleNavigation={handleNavigation} />
+      <Header
+        handleNavigation={handleNavigation}
+        activeItem={currentComponent}
+      />
       <div className="content">
-        <Sidebar handleNavigation={handleNavigation} />
+        <Sidebar
+          handleNavigation={handleNavigation}
+          currentComponent={currentComponent}
+        />
         {renderComponent()}
       </div>
     </div>

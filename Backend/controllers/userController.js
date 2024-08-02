@@ -1,7 +1,8 @@
+// userController.js
 const db = require("../config/db.js");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const generateToken = require('../middlewares/generateTokenAndCookies.js'); 
+const generateToken = require('../middlewares/generateTokenAndCookies.js');
 
 // Fetch countries
 const fetchCountries = (req, res) => {
@@ -14,55 +15,15 @@ const fetchCountries = (req, res) => {
 // Fetch states based on selected country
 const fetchStates = (req, res) => {
     const countryId = req.query.country_id;
-    db.query(
-        "SELECT state_id, state_name FROM states WHERE country_id = ?",
-        [countryId],
-        (err, results) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json(results);
-        }
-    );
-};
-
-// Validate registration data
-const validateRegistrationData = (data) => {
-    const errors = {};
-    if (!data.name) errors.name = "Name is required";
-    if (!data.email) {
-        errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(data.email)) {
-        errors.email = "Email is invalid";
-    }
-    if (!data.country_code) errors.country_code = "Country code is required";
-    if (!data.mobile_number) {
-        errors.mobile_number = "Mobile number is required";
-    } else if (!/^\d{1,15}$/.test(data.mobile_number)) {
-        errors.mobile_number = "Mobile number is invalid";
-    }
-    if (!data.gender) errors.gender = "Gender is required";
-    if (!data.country_id) errors.country_id = "Country is required";
-    if (!data.state_id) errors.state_id = "State is required";
-    if (!data.password) {
-        errors.password = "Password is required";
-    } else if (data.password.length < 8 || data.password.length > 18) {
-        errors.password = "Password must be between 8 to 18 characters";
-    } else if (!/[A-Z]/.test(data.password)) {
-        errors.password = "Password must contain at least one uppercase letter";
-    } else if (!/[0-9]/.test(data.password)) {
-        errors.password = "Password must contain at least one number";
-    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(data.password)) {
-        errors.password = "Password must contain at least one special character";
-    }
-
-    return errors;
+    db.query("SELECT state_id, state_name FROM states WHERE country_id = ?", [countryId], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
 };
 
 // Register user
 const signupUser = async (req, res) => {
     const { user_name, user_email, user_country_code, user_mobile_number, user_gender, country_id, state_id, user_password } = req.body;
-
-    console.log('Request Body:', req.body); // Debugging line
-    console.log('User Password:', user_password); // Debugging line
 
     try {
         db.query('SELECT * FROM users WHERE user_email = ?', [user_email], async (err, results) => {
@@ -71,9 +32,6 @@ const signupUser = async (req, res) => {
             if (results.length > 0) {
                 return res.status(400).json({ message: 'User already exists' });
             } else {
-                if (!user_password) {
-                    return res.status(400).json({ message: 'Password is required' }); // Validate password presence
-                }
                 const hashedPassword = await bcrypt.hash(user_password, 10);
                 const newUser = {
                     user_name,
@@ -97,20 +55,6 @@ const signupUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
-};
-
-// Validate login data
-const validateLoginData = (data) => {
-    const errors = {};
-    if (!data.email) {
-        errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(data.email)) {
-        errors.email = "Email is invalid";
-    }
-    if (!data.password) {
-        errors.password = "Password is required";
-    }
-    return errors;
 };
 
 // Login user
@@ -152,7 +96,7 @@ const checkEmail = (req, res) => {
                 return res.status(400).json({ message: 'Email not found', exists: false });
             }
 
-            const token = generateToken(results[0].user_id); // Use user_id instead of id
+            const token = generateToken(results[0].user_id);
             res.json({ exists: true, token, userId: results[0].user_id });
         });
     } catch (error) {
@@ -162,7 +106,7 @@ const checkEmail = (req, res) => {
 
 // Update password
 const changePassword = async (req, res) => {
-    const { email, password } = req.body; // Get email and new password from request body
+    const { email, password } = req.body;
 
     if (!email || !password) {
         return res.status(400).json({ message: 'Email and password are required' });
@@ -213,6 +157,21 @@ const getUsers = (req, res) => {
     });
 };
 
+// Delete user
+const handleDelete = (req, res) => {
+    const userId = req.body.userId; // Get userId from the request body
+    console.log(`Attempting to delete user with ID: ${userId}`);
+    db.query('DELETE FROM users WHERE user_id = ?', [userId], (error, results) => {
+      if (error) {
+        return res.status(500).json({ error: error.message });
+      }
+      res.json({ message: 'User deleted successfully' });
+    });
+  };
+  
+
+
+
 module.exports = {
     fetchCountries,
     fetchStates,
@@ -221,4 +180,5 @@ module.exports = {
     checkEmail,
     changePassword,
     getUsers,
+    handleDelete,
 };

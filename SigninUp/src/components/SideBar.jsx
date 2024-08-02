@@ -1,25 +1,38 @@
 import React from "react";
 
-const Sidebar = ({ handleNavigation }) => {
+const Sidebar = ({ handleNavigation, currentComponent }) => {
   return (
     <div
       className="sidebar"
       style={{ marginTop: "1.2rem", marginLeft: "16px" }}
     >
-      <ul style={{ color: "white" }}>
-        <li onClick={() => handleNavigation("Dashboard")}>Dashboard</li>
-        <li onClick={() => handleNavigation("Users")}>Users</li>
-        <li onClick={() => handleNavigation("Employees")}>Employees</li>
-        <li onClick={() => handleNavigation("ChangePassword")}>
-          Change Password
-        </li>
-        <li onClick={() => handleNavigation("ContactRequest")}>
-          Contact Request
-        </li>
-        <li onClick={() => handleNavigation("ManageTemplates")}>
-          Manage Templates
-        </li>
-        <li onClick={() => handleNavigation("Settings")}>Settings</li>
+      <ul style={{ color: "white", listStyleType: "none", padding: 0 }}>
+        {[
+          "Dashboard",
+          "Users",
+          "Employees",
+          "ChangePassword",
+          "ContactRequest",
+          "ManageTemplates",
+          "Settings",
+        ].map((component) => (
+          <li
+            key={component}
+            onClick={() => handleNavigation(component)}
+            style={{
+              cursor: "pointer",
+              padding: "10px",
+              backgroundColor:
+                currentComponent === component ? "#29395f" : "transparent",
+              color: currentComponent === component ? "white" : "black", // Keep text color white
+              fontWeight: currentComponent === component ? "bold" : "normal", // Bold for active
+              transform:
+                currentComponent === component ? "scale(1.1)" : "scale(1)", // Bulging effect for active
+            }}
+          >
+            {component}
+          </li>
+        ))}
       </ul>
     </div>
   );
