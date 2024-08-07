@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Button, useToast } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
@@ -7,8 +7,8 @@ const Header = ({ handleNavigation, activeItem }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.clear();
+    sessionStorage.removeItem("token");
+    sessionStorage.clear();
 
     toast({
       title: "Logged out successfully.",

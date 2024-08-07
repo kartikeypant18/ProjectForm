@@ -80,7 +80,7 @@ export default function Login() {
             duration: 5000,
             isClosable: true,
           });
-          localStorage.setItem("token", response.data.token); // Store token in local storage
+          sessionStorage.setItem("token", response.data.token); // Store token in session storage
           window.location.href = "/homepage"; // Redirect to home or dashboard
         })
         .catch((error) => {

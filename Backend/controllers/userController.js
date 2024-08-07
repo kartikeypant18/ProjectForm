@@ -1,4 +1,3 @@
-// userController.js
 const db = require("../config/db.js");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -149,28 +148,41 @@ const getUsers = (req, res) => {
     `;
 
     db.query(query, (err, results) => {
-        if (err) {
-            console.error("Error fetching users:", err);
-            return res.status(500).json({ message: "Internal Server Error" });
-        }
+        if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
 };
 
 // Delete user
 const handleDelete = (req, res) => {
-    const userId = req.body.userId; // Get userId from the request body
-    console.log(`Attempting to delete user with ID: ${userId}`);
-    db.query('DELETE FROM users WHERE user_id = ?', [userId], (error, results) => {
-      if (error) {
-        return res.status(500).json({ error: error.message });
-      }
-      res.json({ message: 'User deleted successfully' });
+    const { userId } = req.params;
+
+    db.query('DELETE FROM users WHERE user_id = ?', [userId], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+
+        res.json({ success: true, message: 'User deleted successfully' });
     });
-  };
-  
+};
 
+// Edit user
+const editUser = (req, res) => {
+    const { userId } = req.params;
+    const updatedUser = req.body;
 
+    db.query('UPDATE users SET ? WHERE user_id = ?', [updatedUser, userId], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+
+        res.json({ success: true, message: 'User updated successfully' });
+    });
+};
 
 module.exports = {
     fetchCountries,
@@ -181,4 +193,5 @@ module.exports = {
     changePassword,
     getUsers,
     handleDelete,
+    editUser,
 };

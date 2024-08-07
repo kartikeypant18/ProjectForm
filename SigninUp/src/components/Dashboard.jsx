@@ -12,6 +12,10 @@ const Dashboard = () => {
   const [userData, setUserData] = useState([]);
   const [pieChartOptions, setPieChartOptions] = useState({});
   const [lineChartOptions, setLineChartOptions] = useState({});
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [maleCount, setMaleCount] = useState(0);
+  const [femaleCount, setFemaleCount] = useState(0);
+  const [usersCreatedToday, setUsersCreatedToday] = useState(0);
 
   useEffect(() => {
     // Fetch user data
@@ -20,6 +24,7 @@ const Dashboard = () => {
       const data = await response.json();
       setUserData(data);
       prepareCharts(data);
+      calculateStatistics(data); // Call the function to calculate statistics
     };
 
     fetchUserData();
@@ -131,10 +136,100 @@ const Dashboard = () => {
     });
   };
 
+  const calculateStatistics = (data) => {
+    const total = data.length;
+    const male = data.filter((user) => user.user_gender === "male").length;
+    const female = data.filter((user) => user.user_gender === "female").length;
+
+    // Count users created today
+    const today = new Date().toISOString().slice(0, 10);
+    const createdToday = data.filter(
+      (user) => new Date(user.created_at).toISOString().slice(0, 10) === today
+    ).length;
+
+    setTotalUsers(total);
+    setMaleCount(male);
+    setFemaleCount(female);
+    setUsersCreatedToday(createdToday);
+  };
+
   return (
-    <div style={{ display: "flex" }}>
-      <HighchartsReact highcharts={Highcharts} options={pieChartOptions} />
-      <HighchartsReact highcharts={Highcharts} options={lineChartOptions} />
+    <div style={{ padding: "20px" }}>
+      {/* Statistics Container */}
+      <div
+        style={{
+          marginBottom: "20px",
+          display: "flex",
+          gap: "20px",
+          backgroundColor: "#f5f5f5", // Light background color
+          padding: "15px", // Padding inside the container
+          borderRadius: "8px", // Rounded corners
+          boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)", // Subtle shadow
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            backgroundColor: "#fff", // White background for each stat box
+            padding: "10px",
+            borderRadius: "8px",
+            textAlign: "center",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <h3>Total Users</h3>
+          <p style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{totalUsers}</p>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            backgroundColor: "#fff",
+            padding: "10px",
+            borderRadius: "8px",
+            textAlign: "center",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <h3>Male Users</h3>
+          <p style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{maleCount}</p>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            backgroundColor: "#fff",
+            padding: "10px",
+            borderRadius: "8px",
+            textAlign: "center",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <h3>Female Users</h3>
+          <p style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
+            {femaleCount}
+          </p>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            backgroundColor: "#fff",
+            padding: "10px",
+            borderRadius: "8px",
+            textAlign: "center",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <h3>Users Created Today</h3>
+          <p style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
+            {usersCreatedToday}
+          </p>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div style={{ display: "flex", gap: "20px" }}>
+        <HighchartsReact highcharts={Highcharts} options={pieChartOptions} />
+        <HighchartsReact highcharts={Highcharts} options={lineChartOptions} />
+      </div>
     </div>
   );
 };

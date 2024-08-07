@@ -2,27 +2,38 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Button, useDisclosure } from "@chakra-ui/react";
 import AddUserModal from "./AddUserModal"; // Import the AddUserModal
+import EditUserModal from "./EditUserModal"; // Import the EditUserModal
+import ConfirmationModal from "./ConfirmationModal"; // Import the ConfirmationModal
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState(""); // New state for search query
+  const [searchQuery, setSearchQuery] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "created_at",
     direction: "descending",
-  }); // New state for sorting
-  const [currentPage, setCurrentPage] = useState(1); // Current page
-  const usersPerPage = 8; // Users per page
-
-  // Modal hooks
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isConfirmationOpen, setConfirmationOpen] = useState(false); // State for confirmation modal
+  const usersPerPage = 8;
+  const {
+    isOpen: isAddOpen,
+    onOpen: onAddOpen,
+    onClose: onAddClose,
+  } = useDisclosure();
+  const {
+    isOpen: isEditOpen,
+    onOpen: onEditOpen,
+    onClose: onEditClose,
+  } = useDisclosure();
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/users"); // Adjust the endpoint as needed
-        setUsers(response.data); // Assuming response.data is an array of user objects
+        const response = await axios.get("http://localhost:5000/api/users");
+        setUsers(response.data);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -33,24 +44,39 @@ const UserList = () => {
     fetchUsers();
   }, []);
 
-  const handleEdit = (userId) => {
-    console.log(`Edit user with ID: ${userId}`);
+  const handleEdit = (user) => {
+    setSelectedUser(user);
+    onEditOpen();
   };
 
-  const handleDelete = async (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
+  const handleDelete = (user) => {
+    setSelectedUser(user);
+    setConfirmationOpen(true); // Open the confirmation modal
+  };
+
+  const confirmDelete = async () => {
+    if (selectedUser) {
       try {
-        await axios.delete(`http://localhost:5000/api/users`, {
-          data: { userId },
-        });
-        setUsers(users.filter((user) => user.user_id !== userId));
+        await axios.delete(
+          `http://localhost:5000/api/delete/${selectedUser.user_id}`
+        );
+        setUsers(users.filter((user) => user.user_id !== selectedUser.user_id));
+        setConfirmationOpen(false); // Close the confirmation modal
       } catch (error) {
         setError(error.message);
       }
     }
   };
 
-  // Filter users based on search query
+  const refreshUsers = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/users");
+      setUsers(response.data);
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   const filteredUsers = users.filter((user) => {
     const query = searchQuery.toLowerCase();
     return (
@@ -61,7 +87,6 @@ const UserList = () => {
     );
   });
 
-  // Sorting function
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     const aValue = a[sortConfig.key];
     const bValue = b[sortConfig.key];
@@ -87,33 +112,39 @@ const UserList = () => {
     if (sortConfig.key === key) {
       return sortConfig.direction === "ascending" ? " ↑" : " ↓";
     }
-    return null; // No arrow for unsorted columns
+    return null;
   };
 
-  // Calculate the current users to display
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = sortedUsers.slice(indexOfFirstUser, indexOfLastUser);
 
-  // Calculate total pages
   const totalPages = Math.ceil(sortedUsers.length / usersPerPage);
+  const endPage = Math.min(totalPages, currentPage + 1);
+  const startPage = Math.max(1, currentPage - 1);
 
-  // Pagination controls
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
 
-  // Generate page numbers to display
   const generatePageNumbers = () => {
     const pages = [];
-    const startPage = Math.max(1, currentPage - 1); // Start from the current page minus 1
-    const endPage = Math.min(totalPages, currentPage + 1); // End at the current page plus 1
-
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
-
     return pages;
+  };
+
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const prePage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   if (loading) return <div style={{ marginTop: "40px" }}>Loading...</div>;
@@ -154,7 +185,11 @@ const UserList = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button onClick={onOpen} colorScheme="teal" style={{ height: "40px" }}>
+        <Button
+          onClick={onAddOpen}
+          colorScheme="teal"
+          style={{ height: "40px" }}
+        >
           Add More Users
         </Button>
       </div>
@@ -279,10 +314,12 @@ const UserList = () => {
                 {new Date(user.created_at).toLocaleDateString()}
               </td>
               <td style={{ padding: "10px", border: "1px solid #dee2e6" }}>
-                <button onClick={() => handleEdit(user.user_id)}>Edit</button>
-                <button onClick={() => handleDelete(user.user_id)}>
+                <Button colorScheme="blue" onClick={() => handleEdit(user)}>
+                  Edit
+                </Button>
+                <Button colorScheme="red" onClick={() => handleDelete(user)}>
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}
@@ -293,6 +330,18 @@ const UserList = () => {
       <div
         style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}
       >
+        <button
+          onClick={prePage}
+          disabled={currentPage === 1}
+          style={{
+            backgroundColor: "#29395f",
+            color: "white",
+            opacity: currentPage === 1 ? 0.5 : 1,
+            cursor: currentPage === 1 ? "not-allowed" : "pointer",
+          }}
+        >
+          Prev
+        </button>
         {generatePageNumbers().map((pageNumber) => (
           <button
             key={pageNumber}
@@ -311,10 +360,44 @@ const UserList = () => {
             {pageNumber}
           </button>
         ))}
+        <button
+          onClick={nextPage}
+          disabled={currentPage === totalPages}
+          style={{
+            backgroundColor: "#29395f",
+            color: "white",
+            opacity: currentPage === totalPages ? 0.5 : 1,
+            cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+          }}
+        >
+          Next
+        </button>
       </div>
 
       {/* Add User Modal */}
-      <AddUserModal isOpen={isOpen} onClose={onClose} />
+      <AddUserModal
+        isOpen={isAddOpen}
+        onClose={onAddClose}
+        refreshUsers={refreshUsers}
+      />
+
+      {/* Edit User Modal */}
+      {selectedUser && (
+        <EditUserModal
+          isOpen={isEditOpen}
+          onClose={onEditClose}
+          user={selectedUser}
+          refreshUsers={refreshUsers}
+        />
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isConfirmationOpen}
+        onClose={() => setConfirmationOpen(false)}
+        onConfirm={confirmDelete}
+        userName={selectedUser ? selectedUser.user_name : ""}
+      />
     </div>
   );
 };
