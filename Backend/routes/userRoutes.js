@@ -1,4 +1,3 @@
-// userRoutes.js
 const express = require("express");
 const {
     fetchCountries,
@@ -10,19 +9,22 @@ const {
     getUsers,
     handleDelete,
     editUser,
-} = require("../controllers/userController");
-const authenticateToken = require("../middlewares/authenticateToken");
+    submitContactRequest,
+    fetchContactRequests,
+} = require("../controllers/userController.js");
 
 const router = express.Router();
 
-router.get("/country", fetchCountries);
+router.get("/countries", fetchCountries);
 router.get("/states", fetchStates);
 router.post("/signup", signupUser);
 router.post("/login", loginUser);
-router.post("/checkEmail", checkEmail);
-router.post("/changepassword", changePassword);
+router.post("/check-email", checkEmail);
+router.post("/change-password", changePassword);
 router.get("/users", getUsers);
-router.delete("/delete/:userId", handleDelete);
-router.put("/edit/:userId", editUser);
+router.delete("/users/:userId", handleDelete);
+router.put("/users/:userId", editUser);
+router.post("/contact", submitContactRequest);
+router.get("/contact-requests", fetchContactRequests);
 
 module.exports = router;

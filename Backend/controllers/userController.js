@@ -3,18 +3,21 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const generateToken = require('../middlewares/generateTokenAndCookies.js');
 
-// Fetch countries
+// Fetch all countries
 const fetchCountries = (req, res) => {
-    db.query("SELECT country_id, country_name FROM country", (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
+    db.query(
+        "SELECT country_id, country_name, country_shortname, country_phonecode FROM countries",
+        (err, results) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(results);
+        }
+    );
 };
 
-// Fetch states based on selected country
+// Fetch states based on the selected country
 const fetchStates = (req, res) => {
     const countryId = req.query.country_id;
-    db.query("SELECT state_id, state_name FROM states WHERE country_id = ?", [countryId], (err, results) => {
+    db.query("SELECT state_id, state_name FROM states WHERE state_country_id = ?", [countryId], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
@@ -22,7 +25,7 @@ const fetchStates = (req, res) => {
 
 // Register user
 const signupUser = async (req, res) => {
-    const { user_name, user_email, user_country_code, user_mobile_number, user_gender, country_id, state_id, user_password } = req.body;
+    const { user_name, user_email, user_country_code, user_mobile_number, user_gender, state_country_id, state_id, user_password } = req.body;
 
     try {
         db.query('SELECT * FROM users WHERE user_email = ?', [user_email], async (err, results) => {
@@ -38,10 +41,10 @@ const signupUser = async (req, res) => {
                     user_country_code,
                     user_mobile_number,
                     user_gender,
-                    country_id,
+                    state_country_id,
                     state_id,
                     user_password: hashedPassword,
-                    user_created_at: new Date(),
+                    created_at: new Date(),
                 };
 
                 db.query('INSERT INTO users SET ?', newUser, (err, result) => {
@@ -136,13 +139,13 @@ const getUsers = (req, res) => {
         users.user_email, 
         CONCAT(users.user_country_code, ' ', users.user_mobile_number) AS contact_number, 
         users.user_gender, 
-        country.country_name AS country, 
+        countries.country_name AS country, 
         states.state_name AS state, 
-        users.user_created_at AS created_at
+        users.created_at
       FROM 
         users 
       JOIN 
-        country ON users.country_id = country.country_id 
+        countries ON users.state_country_id = countries.country_id
       JOIN 
         states ON users.state_id = states.state_id
     `;
@@ -184,6 +187,46 @@ const editUser = (req, res) => {
     });
 };
 
+// Submit a contact request
+const submitContactRequest = (req, res) => {
+    const { name, email, phone, message } = req.body;
+
+    const query = 'INSERT INTO contact_requests (contact_name, contact_email, contact_number, contact_message) VALUES (?, ?, ?, ?)';
+    db.query(query, [name, email, phone, message], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        res.status(200).json({ message: 'Contact request submitted successfully' });
+    });
+};
+
+// Fetch all contact requests
+const fetchContactRequests = (req, res) => {
+    const query = 'SELECT contact_id, contact_name, contact_email, contact_number, contact_message FROM contact_requests';
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const groupedResults = results.reduce((acc, current) => {
+            const { contact_email, contact_id, contact_name, contact_number, contact_message } = current;
+
+            if (!acc[contact_email]) {
+                acc[contact_email] = {
+                    contact_id: contact_id,
+                    contact_name: contact_name,
+                    contact_email: contact_email,
+                    contact_number: contact_number,
+                    contact_messages: [contact_message],
+                };
+            } else {
+                acc[contact_email].contact_messages.push(contact_message);
+            }
+
+            return acc;
+        }, {});
+
+        res.json(Object.values(groupedResults));
+    });
+};
+
 module.exports = {
     fetchCountries,
     fetchStates,
@@ -194,4 +237,6 @@ module.exports = {
     getUsers,
     handleDelete,
     editUser,
+    submitContactRequest,
+    fetchContactRequests,
 };

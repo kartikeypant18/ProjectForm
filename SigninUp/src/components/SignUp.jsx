@@ -24,28 +24,23 @@ import {
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
-    user_name: "", // updated to match backend expected field
-    user_email: "", // updated to match backend expected field
-    user_country_code: "", // updated to match backend expected field
-    user_mobile_number: "", // updated to match backend expected field
-    user_gender: "", // updated to match backend expected field
-    country_id: "",
-    state_id: "",
-    user_password: "", // updated to match backend expected field
-    confirmPassword: "",
-  });
-
-  const [errors, setErrors] = useState({
-    user_name: "", // updated to match backend expected field
+    user_name: "",
     user_email: "",
     user_country_code: "",
     user_mobile_number: "",
     user_gender: "",
-    country_id: "",
+    state_country_id: "", // Corrected from country_id to state_country_id
     state_id: "",
-    user_password: "", // updated to match backend expected field
+    user_password: "",
     confirmPassword: "",
   });
+
+  const [errors, setErrors] = useState({});
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [isChecked, setIsChecked] = useState(false);
+  const toast = useToast();
+
   const resetForm = () => {
     setFormData({
       user_name: "",
@@ -53,7 +48,7 @@ export default function SignUp() {
       user_country_code: "",
       user_mobile_number: "",
       user_gender: "",
-      country_id: "",
+      state_country_id: "", // Corrected from country_id to state_country_id
       state_id: "",
       user_password: "",
       confirmPassword: "",
@@ -61,16 +56,12 @@ export default function SignUp() {
     setErrors({});
     setIsChecked(false);
   };
-  const [countries, setCountries] = useState([]);
-  const [states, setStates] = useState([]);
-  const [isChecked, setIsChecked] = useState(false);
-  const toast = useToast();
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/country")
+      .get("http://localhost:5000/api/countries") // Correct endpoint
       .then((response) => {
-        console.log("Fetched countries:", response.data); // Debugging log
+        console.log("Fetched countries:", response.data);
         setCountries(response.data);
       })
       .catch((error) => {
@@ -79,20 +70,20 @@ export default function SignUp() {
   }, []);
 
   useEffect(() => {
-    if (formData.country_id) {
+    if (formData.state_country_id) {
       axios
         .get(
-          `http://localhost:5000/api/states?country_id=${formData.country_id}`
-        )
+          `http://localhost:5000/api/states?country_id=${formData.state_country_id}`
+        ) // Use country_id for state fetching
         .then((response) => {
-          console.log("Fetched states:", response.data); // Debugging log
+          console.log("Fetched states:", response.data);
           setStates(response.data);
         })
         .catch((error) => {
           console.error("Error fetching states:", error);
         });
     }
-  }, [formData.country_id]);
+  }, [formData.state_country_id]);
 
   const validate = (name, value) => {
     let error = "";
@@ -114,7 +105,7 @@ export default function SignUp() {
       case "user_gender":
         if (!value) error = "Gender is required";
         break;
-      case "country_id":
+      case "state_country_id":
         if (!value) error = "Country is required";
         break;
       case "state_id":
@@ -170,7 +161,7 @@ export default function SignUp() {
   const handleGenderChange = (value) => {
     setFormData({
       ...formData,
-      user_gender: value, // updated to match backend expected field
+      user_gender: value,
     });
     validate("user_gender", value);
   };
@@ -199,8 +190,12 @@ export default function SignUp() {
     }
 
     if (isValid) {
+      const { confirmPassword, ...signupData } = formData;
       axios
-        .post("http://localhost:5000/api/signup", formData) // updated endpoint to match the backend
+        .post("http://localhost:5000/api/signup", {
+          ...signupData,
+          state_country_id: formData.state_country_id, // Ensure this is sent
+        })
         .then((response) => {
           toast({
             title: "Success",
@@ -212,12 +207,12 @@ export default function SignUp() {
           resetForm();
         })
         .catch((error) => {
-          console.error("There was an error registering the student!", error);
+          console.error("There was an error registering the user!", error);
           toast({
             title: "Error",
             description:
               error.response?.data?.message ||
-              "There was an error registering the student",
+              "There was an error registering the user",
             status: "error",
             duration: 5000,
             isClosable: true,
@@ -297,53 +292,16 @@ export default function SignUp() {
                     onChange={handleChange}
                     borderColor={getBorderColor("user_country_code")}
                   >
-                    <option value="">Country Code</option>
-                    <option value="1">(+1) USA</option>
-                    <option value="44">(+44) GBR</option>
-                    <option value="91">(+91) IND</option>
-                    <option value="61">(+61) AUS</option>
-                    <option value="81">(+81) JPN</option>
-                    <option value="49">(+49) DEU</option>
-                    <option value="33">(+33) FRA</option>
-                    <option value="39">(+39) ITA</option>
-                    <option value="86">(+86) CHN</option>
-                    <option value="7">(+7) RUS</option>
-                    <option value="34">(+34) ESP</option>
-                    <option value="55">(+55) BRA</option>
-                    <option value="27">(+27) ZAF</option>
-                    <option value="82">(+82) KOR</option>
-                    <option value="31">(+31) NLD</option>
-                    <option value="46">(+46) SWE</option>
-                    <option value="41">(+41) CHE</option>
-                    <option value="52">(+52) MEX</option>
-                    <option value="65">(+65) SGP</option>
-                    <option value="60">(+60) MYS</option>
-                    <option value="32">(+32) BEL</option>
-                    <option value="47">(+47) NOR</option>
-                    <option value="48">(+48) POL</option>
-                    <option value="45">(+45) DNK</option>
-                    <option value="20">(+20) EGY</option>
-                    <option value="66">(+66) THA</option>
-                    <option value="63">(+63) PHL</option>
-                    <option value="90">(+90) TUR</option>
-                    <option value="62">(+62) IDN</option>
-                    <option value="58">(+58) VEN</option>
-                    <option value="92">(+92) PAK</option>
-                    <option value="98">(+98) IRN</option>
-                    <option value="234">(+234) NGA</option>
-                    <option value="250">(+250) RWA</option>
-                    <option value="256">(+256) UGA</option>
-                    <option value="254">(+254) KEN</option>
-                    <option value="64">(+64) NZL</option>
-                    <option value="36">(+36) HUN</option>
-                    <option value="48">(+48) POL</option>
-                    <option value="43">(+43) AUT</option>
-                    <option value="51">(+51) PER</option>
-                    <option value="53">(+53) CUB</option>
-                    <option value="56">(+56) CHL</option>
-                    <option value="58">(+58) VEN</option>
-                    <option value="57">(+57) COL</option>
-                    <option value="354">(+354) ISL</option>
+                    <option value="">Select country code</option>
+                    {countries.map((country) => (
+                      <option
+                        key={country.country_id}
+                        value={country.country_phonecode}
+                      >
+                        {country.country_shortname} (+
+                        {country.country_phonecode})
+                      </option>
+                    ))}
                   </Select>
                   {errors.user_country_code && (
                     <Text color="red.500">{errors.user_country_code}</Text>
@@ -368,22 +326,21 @@ export default function SignUp() {
                 </FormControl>
               </Flex>
 
-              <FormControl id="user_gender" mb={4}>
+              <FormControl
+                id="user_gender"
+                isInvalid={!!errors.user_gender}
+                mb={4}
+              >
                 <FormLabel>Gender</FormLabel>
                 <RadioGroup
+                  name="user_gender"
                   onChange={handleGenderChange}
                   value={formData.user_gender}
                 >
-                  <Stack direction="row">
-                    <Radio value="male" borderColor="gray.500">
-                      Male
-                    </Radio>
-                    <Radio value="female" borderColor="gray.500">
-                      Female
-                    </Radio>
-                    <Radio value="other" borderColor="gray.500">
-                      Other
-                    </Radio>
+                  <Stack spacing={4} direction="row">
+                    <Radio value="male">Male</Radio>
+                    <Radio value="female">Female</Radio>
+                    <Radio value="other">Other</Radio>
                   </Stack>
                 </RadioGroup>
                 {errors.user_gender && (
@@ -393,18 +350,18 @@ export default function SignUp() {
 
               <Flex mb={4}>
                 <FormControl
-                  id="country_id"
-                  isInvalid={!!errors.country_id}
+                  id="state_country_id"
+                  isInvalid={!!errors.state_country_id}
                   mr={4}
                 >
                   <FormLabel>Country</FormLabel>
                   <Select
-                    name="country_id"
-                    value={formData.country_id}
+                    name="state_country_id"
+                    value={formData.state_country_id}
                     onChange={handleChange}
-                    borderColor={getBorderColor("country_id")}
+                    borderColor={getBorderColor("state_country_id")}
                   >
-                    <option value="">Select Country</option>
+                    <option value="">Select a country</option>
                     {countries.map((country) => (
                       <option
                         key={country.country_id}
@@ -414,8 +371,8 @@ export default function SignUp() {
                       </option>
                     ))}
                   </Select>
-                  {errors.country_id && (
-                    <Text color="red.500">{errors.country_id}</Text>
+                  {errors.state_country_id && (
+                    <Text color="red.500">{errors.state_country_id}</Text>
                   )}
                 </FormControl>
 
@@ -427,7 +384,7 @@ export default function SignUp() {
                     onChange={handleChange}
                     borderColor={getBorderColor("state_id")}
                   >
-                    <option value="">Select State</option>
+                    <option value="">Select a state</option>
                     {states.map((state) => (
                       <option key={state.state_id} value={state.state_id}>
                         {state.state_name}
@@ -439,6 +396,7 @@ export default function SignUp() {
                   )}
                 </FormControl>
               </Flex>
+
               <FormControl
                 id="user_password"
                 isInvalid={!!errors.user_password}
@@ -479,22 +437,24 @@ export default function SignUp() {
                 isChecked={isChecked}
                 onChange={handleCheckboxChange}
                 mb={4}
-                borderColor="gray.500" // Use Chakra's color scheme
               >
                 I agree to the terms and conditions
               </Checkbox>
 
-              <Stack spacing={10}>
-                <Button type="submit" colorScheme="teal">
-                  Sign up
-                </Button>
-              </Stack>
+              <Button
+                type="submit"
+                bg={"blue.400"}
+                color={"white"}
+                _hover={{ bg: "blue.500" }}
+              >
+                Sign up
+              </Button>
             </form>
             <Center>
-              <Text fontSize={"sm"}>
-                Already a user?{" "}
-                <Link color={"blue.400"} href="/">
-                  Login
+              <Text>
+                Already have an account?{" "}
+                <Link color="blue.400" href="/">
+                  Log in
                 </Link>
               </Text>
             </Center>

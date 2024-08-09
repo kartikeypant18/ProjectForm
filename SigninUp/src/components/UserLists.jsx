@@ -188,7 +188,7 @@ const UserList = () => {
         <Button
           onClick={onAddOpen}
           colorScheme="teal"
-          style={{ height: "40px" }}
+          style={{ height: "40px", width: "45%" }}
         >
           Add More Users
         </Button>

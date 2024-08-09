@@ -41,7 +41,11 @@ const Header = ({ handleNavigation, activeItem }) => {
         <img
           src="/logo-no-background.png"
           alt="Logo"
-          style={{ height: "100px" }}
+          style={{
+            height: "90px",
+            width: "11rem",
+            // backgroundColor: " #29395f",
+          }}
         />
       </div>
       <div

@@ -138,8 +138,8 @@ const Dashboard = () => {
 
   const calculateStatistics = (data) => {
     const total = data.length;
-    const male = data.filter((user) => user.user_gender === "male").length;
-    const female = data.filter((user) => user.user_gender === "female").length;
+    const male = data.filter((user) => user.user_gender === "Male").length;
+    const female = data.filter((user) => user.user_gender === "Female").length;
 
     // Count users created today
     const today = new Date().toISOString().slice(0, 10);

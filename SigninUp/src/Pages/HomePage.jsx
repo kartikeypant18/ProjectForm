@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import Sidebar from "../components/SideBar";
 import Header from "../components/Header";
 import UserList from "../components/UserLists";
-import Dashboard from "../components/Dashboard"; // Import the Dashboard component
+import Dashboard from "../components/Dashboard";
+import ContactRequest from "../components/ContactRequest"; // Import the ContactRequest component
 import "../App.css";
 
 const HomePage = () => {
-  const [currentComponent, setCurrentComponent] = useState("Users"); // Default component to show
+  const [currentComponent, setCurrentComponent] = useState("Users");
 
   const renderComponent = () => {
     switch (currentComponent) {
@@ -14,6 +15,8 @@ const HomePage = () => {
         return <UserList />;
       case "Dashboard":
         return <Dashboard />;
+      case "ContactRequest":
+        return <ContactRequest />;
       default:
         return <UserList />;
     }
