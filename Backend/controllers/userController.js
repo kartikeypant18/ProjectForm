@@ -2,6 +2,8 @@ const db = require("../config/db.js");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const generateToken = require('../middlewares/generateTokenAndCookies.js');
+const fs = require('fs');
+const path = require('path');
 
 // Fetch all countries
 const fetchCountries = (req, res) => {
@@ -226,7 +228,92 @@ const fetchContactRequests = (req, res) => {
         res.json(Object.values(groupedResults));
     });
 };
+const insertEmailTemplate = (slug, title, subject, filePath) => {
+    const templatePath = path.join(__dirname, '../../SigninUp/src/components/emailtemplates', filePath);
 
+    fs.readFile(templatePath, 'utf8', (err, content) => {
+        if (err) {
+            console.error(`Error reading file ${filePath}:`, err);
+            return;
+        }
+
+        // Check if the template already exists
+        const checkQuery = "SELECT * FROM Email_templates WHERE temp_slug = ?";
+        db.query(checkQuery, [slug], (err, results) => {
+            if (err) {
+                console.error('Error checking for existing template:', err);
+                return;
+            }
+
+            if (results.length > 0) {
+                // If it exists, update the existing template
+                const updateQuery = `
+                    UPDATE Email_templates 
+                    SET temp_title = ?, temp_subject = ?, temp_content = ?, temp_updated_at = NOW() 
+                    WHERE temp_slug = ?
+                `;
+                db.query(updateQuery, [title, subject, content, slug], (err, result) => {
+                    if (err) {
+                        console.error('Error updating template in database:', err);
+                    } else {
+                        console.log(`Template ${title} updated successfully`);
+                    }
+                });
+            } else {
+                // If it doesn't exist, insert the new template
+                const query = `
+                    INSERT INTO Email_templates (temp_slug, temp_title, temp_subject, temp_content, temp_created_at) 
+                    VALUES (?, ?, ?, ?, NOW())
+                `;
+
+                db.query(query, [slug, title, subject, content], (err, result) => {
+                    if (err) {
+                        console.error('Error inserting template into database:', err);
+                    } else {
+                        console.log(`Template ${title} inserted successfully`);
+                    }
+                });
+            }
+        });
+    });
+};
+
+// Insert email templates
+insertEmailTemplate('signup', 'Signup Template', 'Welcome to Our Service', 'signup.html');
+insertEmailTemplate('change_password', 'Change Password Template', 'Reset Your Password', 'changePassword.html');
+insertEmailTemplate('forgot_password', 'Forgot Password Template', 'Password Recovery', 'forgotPassword.html');
+
+
+// Fetch all email templates
+const fetchEmailTemplates = (req, res) => {
+    const query = "SELECT temp_slug, temp_title, temp_created_at, temp_updated_at FROM Email_templates";
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+        res.json(results);
+    });
+};
+
+
+
+// Fetch email template by slug
+const fetchEmailTemplateBySlug = (req, res) => {
+    const { slug } = req.params;
+
+    const query = "SELECT temp_title, temp_content FROM Email_templates WHERE temp_slug = ?";
+    db.query(query, [slug], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (results.length === 0) {
+            return res.status(404).json({ message: "Template not found" });
+        }
+        res.json(results[0]);
+    });
+};
+
+// Add these functions to your exports
 module.exports = {
     fetchCountries,
     fetchStates,
@@ -239,4 +326,6 @@ module.exports = {
     editUser,
     submitContactRequest,
     fetchContactRequests,
+    fetchEmailTemplates, // Add this line
+    fetchEmailTemplateBySlug, // Add this line
 };

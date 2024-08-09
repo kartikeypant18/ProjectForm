@@ -1,0 +1,87 @@
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Container Styles */
+.email-template-container {
+  margin: 2rem;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Styles */
+.email-template-header {
+  color: white;
+  background: #29395f;
+  font-weight: bold;
+  font-size: 1.6rem;
+  padding: 15px;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+}
+
+/* Table Styles */
+.email-template-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.email-template-table th,
+.email-template-table td {
+  padding: 10px;
+  border: 1px solid #dee2e6;
+  text-align: left;
+}
+
+.email-template-table th {
+  background-color: #e9ecef;
+}
+
+.email-template-row:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+/* Button Styles */
+.edit-button {
+  margin-left: 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: #007bff; /* Change to your preferred color */
+  font-size: 1rem;
+}
+
+/* Details Styles */
+.email-template-details {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.email-template-content {
+  margin-top: 10px;
+  color: #555555;
+}
+
+.close-template-button {
+  margin-top: 20px;
+  background-color: #dc3545; /* Bootstrap's danger color */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.close-template-button:hover {
+  background-color: #c82333; /* Darker red on hover */
+}

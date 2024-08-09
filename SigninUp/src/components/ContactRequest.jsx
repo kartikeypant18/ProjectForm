@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { FaEnvelope } from "react-icons/fa";
 import axios from "axios";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import "./ContactRequest.css";
 
 const ContactRequest = () => {
@@ -30,10 +32,6 @@ const ContactRequest = () => {
 
   const handleSubjectChange = (e) => {
     setSubject(e.target.value);
-  };
-
-  const handleReplyChange = (e) => {
-    setReply(e.target.value);
   };
 
   const handleSendReply = () => {
@@ -162,13 +160,21 @@ const ContactRequest = () => {
               onChange={handleSubjectChange}
               className="reply-input"
             />
-            <textarea
+            <CKEditor
+              style={{ height: "100rem" }}
+              editor={ClassicEditor}
+              data={reply}
+              onChange={(event, editor) => {
+                const data = editor.getData();
+                setReply(data);
+              }}
               placeholder="Reply"
-              value={reply}
-              onChange={handleReplyChange}
-              className="reply-textarea"
             />
-            <button onClick={handleSendReply} className="send-reply-button">
+            <button
+              style={{ marginTop: "1rem" }}
+              onClick={handleSendReply}
+              className="send-reply-button"
+            >
               Send Reply
             </button>
           </div>

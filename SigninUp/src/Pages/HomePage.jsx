@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import UserList from "../components/UserLists";
 import Dashboard from "../components/Dashboard";
 import ContactRequest from "../components/ContactRequest"; // Import the ContactRequest component
+import EmailTemplates from "../components/EmailTemplate";
 import "../App.css";
 
 const HomePage = () => {
@@ -17,6 +18,8 @@ const HomePage = () => {
         return <Dashboard />;
       case "ContactRequest":
         return <ContactRequest />;
+      case "ManageTemplates": // Add case for ManageTemplates
+        return <EmailTemplates />;
       default:
         return <UserList />;
     }

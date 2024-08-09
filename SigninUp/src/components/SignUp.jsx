@@ -443,11 +443,12 @@ export default function SignUp() {
 
               <Button
                 type="submit"
-                bg={"blue.400"}
-                color={"white"}
-                _hover={{ bg: "blue.500" }}
+                colorScheme="teal"
+                size="lg"
+                width="full"
+                style={{ marginTop: "0.2rem" }}
               >
-                Sign up
+                Sign Up
               </Button>
             </form>
             <Center>

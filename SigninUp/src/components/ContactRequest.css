@@ -245,3 +245,7 @@ tbody tr:nth-child(even) {
 .send-reply-button:hover {
   background-color: #45a049;
 }
+.ck-editor {
+  height: 800px; /* Adjust height as needed */
+  width: 100%; /* Make it responsive */
+}
