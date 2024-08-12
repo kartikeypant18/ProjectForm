@@ -12,8 +12,12 @@ const {
     submitContactRequest,
     fetchContactRequests,
     fetchEmailTemplates, // Add this line
-    fetchEmailTemplateBySlug, // Add this line
+    fetchEmailTemplateBySlug,
+    updateEmailTemplate,
+    sendReply,
+    SetNewPassword, // Add this line
 } = require("../controllers/userController.js");
+const authenticateToken = require("../middlewares/authenticateToken.js");
 
 const router = express.Router();
 
@@ -30,5 +34,8 @@ router.post("/contact", submitContactRequest);
 router.get("/contact-requests", fetchContactRequests);
 router.get("/email-templates", fetchEmailTemplates); // Fetch all email templates
 router.get("/email-templates/:slug", fetchEmailTemplateBySlug);
+router.put("/save-email-templates/:slug", updateEmailTemplate);
+router.post("/sendReply",sendReply)
+router.post("/setnewpassword", authenticateToken, SetNewPassword);
 
 module.exports = router;

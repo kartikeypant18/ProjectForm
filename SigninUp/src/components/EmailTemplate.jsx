@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaPen } from "react-icons/fa"; // Import the pen icon
-import "./EmailTemplates.css"; // Import your CSS file
+import { FaPen } from "react-icons/fa";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
 const EmailTemplates = () => {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [editorData, setEditorData] = useState("");
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -28,6 +30,7 @@ const EmailTemplates = () => {
         `http://localhost:5000/api/email-templates/${slug}`
       );
       setSelectedTemplate(response.data);
+      setEditorData(response.data.temp_content);
     } catch (error) {
       console.error("Error fetching template content:", error);
     }
@@ -37,54 +40,216 @@ const EmailTemplates = () => {
     setSelectedTemplate(null);
   };
 
-  // Helper function to format date strings
+  const handleSaveTemplate = async () => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/save-email-templates/${selectedTemplate.temp_slug}`,
+        {
+          temp_slug: selectedTemplate.temp_slug,
+          temp_content: editorData,
+          file_path: `${selectedTemplate.temp_slug}.html`,
+        }
+      );
+      alert("Template updated successfully!");
+      setSelectedTemplate(null);
+    } catch (error) {
+      console.error("Error saving template:", error);
+    }
+  };
+
   const formatDateString = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString(); // Formats date as MM/DD/YYYY
+    return date.toLocaleDateString();
   };
 
   return (
     <div
-      className="email-template-container"
-      style={{ width: "100%", height: "auto" }}
+      style={{
+        width: "100%",
+        height: "auto",
+        margin: "2rem",
+        padding: "20px",
+        backgroundColor: "#f8f9fa",
+        borderRadius: "5px",
+        boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)",
+      }}
     >
-      <h2 className="email-template-header">Email Templates</h2>
+      <h2
+        style={{
+          color: "white",
+          backgroundColor: "#29395f",
+          fontWeight: "bold",
+          fontSize: "1.6rem",
+          padding: "15px",
+          marginBottom: "1rem",
+          borderRadius: "5px",
+        }}
+      >
+        Email Templates
+      </h2>
       {selectedTemplate ? (
-        <div className="email-template-details">
+        <div
+          style={{
+            marginTop: "20px",
+            padding: "10px",
+            backgroundColor: "#fff",
+            borderRadius: "4px",
+            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+          }}
+        >
           <h3>{selectedTemplate.temp_title}</h3>
-          <div
-            className="email-template-content"
-            dangerouslySetInnerHTML={{ __html: selectedTemplate.temp_content }}
+          <CKEditor
+            editor={ClassicEditor}
+            data={editorData}
+            onChange={(event, editor) => {
+              const data = editor.getData();
+              setEditorData(data);
+            }}
           />
-          <button
-            className="close-template-button"
-            onClick={handleCloseTemplate}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: "15px",
+            }}
           >
-            Close
-          </button>
+            <button
+              style={{
+                padding: "10px 20px",
+                fontSize: "16px",
+                borderRadius: "5px",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: "#4CAF50",
+                color: "white",
+                transition: "background-color 0.3s ease",
+              }}
+              onClick={handleSaveTemplate}
+            >
+              Save
+            </button>
+            <button
+              style={{
+                padding: "10px 20px",
+                fontSize: "16px",
+                borderRadius: "5px",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: "#f44336",
+                color: "white",
+                transition: "background-color 0.3s ease",
+              }}
+              onClick={handleCloseTemplate}
+            >
+              Close
+            </button>
+          </div>
         </div>
       ) : (
-        <table className="email-template-table">
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            marginTop: "20px",
+          }}
+        >
           <thead>
             <tr>
-              <th>Template Name</th>
-              <th>Created At</th>
-              <th>Updated At</th>
-              <th>Action</th>
+              <th
+                style={{
+                  padding: "10px",
+                  border: "1px solid #dee2e6",
+                  textAlign: "left",
+                  backgroundColor: "#e9ecef",
+                }}
+              >
+                Template Name
+              </th>
+              <th
+                style={{
+                  padding: "10px",
+                  border: "1px solid #dee2e6",
+                  textAlign: "left",
+                  backgroundColor: "#e9ecef",
+                }}
+              >
+                Created At
+              </th>
+              <th
+                style={{
+                  padding: "10px",
+                  border: "1px solid #dee2e6",
+                  textAlign: "left",
+                  backgroundColor: "#e9ecef",
+                }}
+              >
+                Updated At
+              </th>
+              <th
+                style={{
+                  padding: "10px",
+                  border: "1px solid #dee2e6",
+                  textAlign: "left",
+                  backgroundColor: "#e9ecef",
+                }}
+              >
+                Action
+              </th>
             </tr>
           </thead>
           <tbody>
-            {templates.map((template) => (
-              <tr key={template.temp_slug} className="email-template-row">
-                <td>{template.temp_slug}</td>
-                <td>{formatDateString(template.temp_created_at)}</td>
-                <td>{formatDateString(template.temp_updated_at)}</td>
-                <td>
+            {templates.map((template, index) => (
+              <tr
+                key={template.temp_slug}
+                style={{
+                  backgroundColor: index % 2 === 0 ? "#f2f2f2" : "#fff",
+                }}
+              >
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #dee2e6",
+                    textAlign: "left",
+                  }}
+                >
+                  {template.temp_slug}
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #dee2e6",
+                    textAlign: "left",
+                  }}
+                >
+                  {formatDateString(template.temp_created_at)}
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #dee2e6",
+                    textAlign: "left",
+                  }}
+                >
+                  {formatDateString(template.temp_updated_at)}
+                </td>
+                <td
+                  style={{
+                    padding: "10px",
+                    border: "1px solid #dee2e6",
+                    textAlign: "left",
+                  }}
+                >
                   <button
                     onClick={() => handleTemplateClick(template.temp_slug)}
-                    className="edit-button"
+                    style={{
+                      cursor: "pointer",
+                      background: "none",
+                      border: "none",
+                      color: "#007bff",
+                      fontSize: "1rem",
+                    }}
                   >
-                    <FaPen /> {/* Render pen icon */}
+                    <FaPen />
                   </button>
                 </td>
               </tr>

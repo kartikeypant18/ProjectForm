@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 const generateToken = require('../middlewares/generateTokenAndCookies.js');
 const fs = require('fs');
 const path = require('path');
+const nodemailer = require("nodemailer");
 
-// Fetch all countries
 const fetchCountries = (req, res) => {
     db.query(
         "SELECT country_id, country_name, country_shortname, country_phonecode FROM countries",
@@ -16,7 +16,7 @@ const fetchCountries = (req, res) => {
     );
 };
 
-// Fetch states based on the selected country
+
 const fetchStates = (req, res) => {
     const countryId = req.query.country_id;
     db.query("SELECT state_id, state_name FROM states WHERE state_country_id = ?", [countryId], (err, results) => {
@@ -25,7 +25,7 @@ const fetchStates = (req, res) => {
     });
 };
 
-// Register user
+
 const signupUser = async (req, res) => {
     const { user_name, user_email, user_country_code, user_mobile_number, user_gender, state_country_id, state_id, user_password } = req.body;
 
@@ -61,7 +61,7 @@ const signupUser = async (req, res) => {
     }
 };
 
-// Login user
+
 const loginUser = async (req, res) => {
     const { user_email, user_password } = req.body;
 
@@ -88,7 +88,7 @@ const loginUser = async (req, res) => {
     }
 };
 
-// Check if email exists
+
 const checkEmail = (req, res) => {
     const { email } = req.body;
 
@@ -108,7 +108,7 @@ const checkEmail = (req, res) => {
     }
 };
 
-// Update password
+
 const changePassword = async (req, res) => {
     const { email, password } = req.body;
 
@@ -132,7 +132,7 @@ const changePassword = async (req, res) => {
     }
 };
 
-// Get all users
+
 const getUsers = (req, res) => {
     const query = `
       SELECT 
@@ -158,7 +158,7 @@ const getUsers = (req, res) => {
     });
 };
 
-// Delete user
+
 const handleDelete = (req, res) => {
     const { userId } = req.params;
 
@@ -173,7 +173,7 @@ const handleDelete = (req, res) => {
     });
 };
 
-// Edit user
+
 const editUser = (req, res) => {
     const { userId } = req.params;
     const updatedUser = req.body;
@@ -189,7 +189,7 @@ const editUser = (req, res) => {
     });
 };
 
-// Submit a contact request
+
 const submitContactRequest = (req, res) => {
     const { name, email, phone, message } = req.body;
 
@@ -201,7 +201,7 @@ const submitContactRequest = (req, res) => {
     });
 };
 
-// Fetch all contact requests
+
 const fetchContactRequests = (req, res) => {
     const query = 'SELECT contact_id, contact_name, contact_email, contact_number, contact_message FROM contact_requests';
     db.query(query, (err, results) => {
@@ -237,7 +237,7 @@ const insertEmailTemplate = (slug, title, subject, filePath) => {
             return;
         }
 
-        // Check if the template already exists
+        
         const checkQuery = "SELECT * FROM Email_templates WHERE temp_slug = ?";
         db.query(checkQuery, [slug], (err, results) => {
             if (err) {
@@ -246,21 +246,10 @@ const insertEmailTemplate = (slug, title, subject, filePath) => {
             }
 
             if (results.length > 0) {
-                // If it exists, update the existing template
-                const updateQuery = `
-                    UPDATE Email_templates 
-                    SET temp_title = ?, temp_subject = ?, temp_content = ?, temp_updated_at = NOW() 
-                    WHERE temp_slug = ?
-                `;
-                db.query(updateQuery, [title, subject, content, slug], (err, result) => {
-                    if (err) {
-                        console.error('Error updating template in database:', err);
-                    } else {
-                        console.log(`Template ${title} updated successfully`);
-                    }
-                });
+                
+                console.log(`Template with slug '${slug}' already exists. No changes made.`);
             } else {
-                // If it doesn't exist, insert the new template
+                
                 const query = `
                     INSERT INTO Email_templates (temp_slug, temp_title, temp_subject, temp_content, temp_created_at) 
                     VALUES (?, ?, ?, ?, NOW())
@@ -278,13 +267,14 @@ const insertEmailTemplate = (slug, title, subject, filePath) => {
     });
 };
 
-// Insert email templates
+
 insertEmailTemplate('signup', 'Signup Template', 'Welcome to Our Service', 'signup.html');
 insertEmailTemplate('change_password', 'Change Password Template', 'Reset Your Password', 'changePassword.html');
 insertEmailTemplate('forgot_password', 'Forgot Password Template', 'Password Recovery', 'forgotPassword.html');
 
 
-// Fetch all email templates
+
+
 const fetchEmailTemplates = (req, res) => {
     const query = "SELECT temp_slug, temp_title, temp_created_at, temp_updated_at FROM Email_templates";
 
@@ -299,7 +289,7 @@ const fetchEmailTemplates = (req, res) => {
 
 
 
-// Fetch email template by slug
+
 const fetchEmailTemplateBySlug = (req, res) => {
     const { slug } = req.params;
 
@@ -312,8 +302,119 @@ const fetchEmailTemplateBySlug = (req, res) => {
         res.json(results[0]);
     });
 };
+const updateEmailTemplate = (req, res) => {
+    const { slug } = req.params;
+    const { temp_content, file_path } = req.body;
 
-// Add these functions to your exports
+    
+    const updateQuery = `
+      UPDATE Email_templates 
+      SET temp_content = ?, temp_updated_at = NOW() 
+      WHERE temp_slug = ?
+    `;
+
+    db.query(updateQuery, [temp_content, slug], (err, result) => {
+      if (err) {
+        console.error('Error updating template in database:', err);
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
+
+      
+      const templatePath = path.join(__dirname, '../../SigninUp/src/components/emailtemplates', file_path);
+
+      fs.writeFile(templatePath, temp_content, 'utf8', (err) => {
+        if (err) {
+          console.error(`Error writing file ${file_path}:`, err);
+          return res.status(500).json({ error: 'Error writing to file' });
+        }
+
+        console.log(`Template ${slug} updated successfully`);
+        res.status(200).json({ message: 'Template updated successfully!' });
+      });
+    });
+};
+
+
+
+const sendReply = async (req, res) => {
+    const { subject, reply, email } = req.body;
+
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_ADDRESS, 
+                pass: process.env.EMAIL_PASSWORD, 
+            },
+        });
+
+        const info = await transporter.sendMail({
+            from: `"Kartikey Pant" <${process.env.EMAIL_ADDRESS}>`,
+            to: email,
+            subject: subject,
+            text: reply,
+            html: `<b>${reply}</b>`,
+        });
+
+        console.log("Message sent: %s", info.messageId);
+        res.status(200).json({ message: 'Reply sent successfully', messageId: info.messageId });
+    } catch (error) {
+        console.error('Error sending reply:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+const SetNewPassword = async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        console.log("No token provided");
+        return res.status(401).json({ message: 'No token provided' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        console.log("Token decoded:", decoded);
+        const userId = decoded.id;
+
+        db.query('SELECT * FROM users WHERE user_id = ?', [userId], async (err, results) => {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ message: 'Server error' });
+            }
+
+            if (results.length === 0) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const user = results[0];
+            const isMatch = await bcrypt.compare(oldPassword, user.user_password);
+            if (!isMatch) {
+                return res.status(400).json({ message: 'Old password is incorrect' });
+            }
+
+            const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+            db.query('UPDATE users SET user_password = ? WHERE user_id = ?', [hashedNewPassword, userId], (err, result) => {
+                if (err) {
+                    console.error('Database error:', err);
+                    return res.status(500).json({ message: 'Server error' });
+                }
+
+                if (result.affectedRows === 0) {
+                    return res.status(400).json({ message: 'Failed to update password' });
+                }
+
+                res.json({ success: true, message: 'Password updated successfully' });
+            });
+        });
+    } catch (error) {
+        console.error('JWT verification error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
 module.exports = {
     fetchCountries,
     fetchStates,
@@ -326,6 +427,9 @@ module.exports = {
     editUser,
     submitContactRequest,
     fetchContactRequests,
-    fetchEmailTemplates, // Add this line
-    fetchEmailTemplateBySlug, // Add this line
+    fetchEmailTemplates,
+    fetchEmailTemplateBySlug, 
+    updateEmailTemplate,
+    sendReply,
+    SetNewPassword
 };

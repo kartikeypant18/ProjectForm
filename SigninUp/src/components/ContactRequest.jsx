@@ -3,6 +3,8 @@ import { FaEnvelope } from "react-icons/fa";
 import axios from "axios";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./ContactRequest.css";
 
 const ContactRequest = () => {
@@ -38,14 +40,14 @@ const ContactRequest = () => {
     const replyData = {
       subject,
       reply,
+      email: "pratyushraghuvanshi73@gmail.com", // Add the recipient's email address
     };
+
     axios
-      .post(
-        `http://localhost:5000/api/contact-requests/${selectedContact.contact_id}/reply`,
-        replyData
-      )
+      .post("http://localhost:5000/api/sendReply", replyData)
       .then((response) => {
         console.log("Reply sent successfully:", response.data);
+        toast.success("Message sent successfully!");
         handleCloseDetails();
       })
       .catch((error) => console.error("Error sending reply:", error));
@@ -53,6 +55,7 @@ const ContactRequest = () => {
 
   return (
     <div className="table-container">
+      <ToastContainer />
       {!selectedContact ? (
         <>
           <h2 className="table-header">Contact Requests</h2>

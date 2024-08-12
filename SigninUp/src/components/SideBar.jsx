@@ -10,7 +10,7 @@ const Sidebar = ({ handleNavigation, currentComponent }) => {
         {[
           "Dashboard",
           "Users",
-          "Employees",
+          "Employee",
           "ChangePassword",
           "ContactRequest",
           "ManageTemplates",
@@ -24,10 +24,11 @@ const Sidebar = ({ handleNavigation, currentComponent }) => {
               padding: "10px",
               backgroundColor:
                 currentComponent === component ? "#29395f" : "transparent",
-              color: currentComponent === component ? "white" : "black", // Keep text color white
-              fontWeight: currentComponent === component ? "bold" : "normal", // Bold for active
+              color: currentComponent === component ? "white" : "black",
+              fontWeight: currentComponent === component ? "bold" : "normal",
               transform:
-                currentComponent === component ? "scale(1.1)" : "scale(1)", // Bulging effect for active
+                currentComponent === component ? "scale(1.1)" : "scale(1)",
+              borderRadius: "4px",
             }}
           >
             {component}

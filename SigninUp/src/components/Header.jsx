@@ -2,7 +2,7 @@ import React from "react";
 import { Button, useToast } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-const Header = ({ handleNavigation, activeItem }) => {
+const Header = ({ handleNavigation, currentComponent }) => {
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -24,16 +24,12 @@ const Header = ({ handleNavigation, activeItem }) => {
   const navItems = [
     { label: "Dashboard", component: "Dashboard" },
     { label: "Users", component: "Users" },
-    { label: "Employees", component: "Employees" },
+    { label: "Employee", component: "Employee" },
     { label: "Change Password", component: "ChangePassword" },
     { label: "Contact Request", component: "ContactRequest" },
     { label: "Manage Templates", component: "ManageTemplates" },
     { label: "Settings", component: "Settings" },
   ];
-
-  const handleItemClick = (component) => {
-    handleNavigation(component);
-  };
 
   return (
     <div className="header" style={{ height: "180px" }}>
@@ -41,11 +37,7 @@ const Header = ({ handleNavigation, activeItem }) => {
         <img
           src="/logo-no-background.png"
           alt="Logo"
-          style={{
-            height: "90px",
-            width: "11rem",
-            // backgroundColor: " #29395f",
-          }}
+          style={{ height: "90px", width: "11rem" }}
         />
       </div>
       <div
@@ -70,17 +62,23 @@ const Header = ({ handleNavigation, activeItem }) => {
             <li key={item.label} style={{ marginRight: "20px" }}>
               <Button
                 variant="link"
-                onClick={() => handleItemClick(item.component)}
+                onClick={() => handleNavigation(item.component)}
                 style={{
                   padding: "0.5rem 1rem",
-                  fontWeight: item.component === activeItem ? "bold" : "normal",
+                  fontWeight:
+                    item.component === currentComponent ? "bold" : "normal",
                   border:
-                    item.component === activeItem ? "2px solid black" : "none",
+                    item.component === currentComponent
+                      ? "2px solid black"
+                      : "none",
                   borderRadius: "4px",
                   transition: "transform 0.2s",
                   transform:
-                    item.component === activeItem ? "scale(1.1)" : "scale(1)",
-                  color: "black", // Ensure the text color is always black
+                    item.component === currentComponent
+                      ? "scale(1.1)"
+                      : "scale(1)",
+                  color:
+                    item.component === currentComponent ? "black" : "black",
                 }}
               >
                 {item.label}
