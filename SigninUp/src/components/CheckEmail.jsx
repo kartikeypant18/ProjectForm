@@ -1,6 +1,6 @@
-// CheckEmail.jsx
 "use client";
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import axios from "axios";
 import {
   Flex,
@@ -15,9 +15,10 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 
-export default function CheckEmail({ onEmailConfirmed }) {
+export default function CheckEmail() {
   const toast = useToast();
   const [email, setEmail] = useState("");
+  const navigate = useNavigate(); // Initialize navigate
 
   const handleChange = (e) => {
     setEmail(e.target.value);
@@ -27,14 +28,25 @@ export default function CheckEmail({ onEmailConfirmed }) {
     e.preventDefault();
 
     try {
-      // Check if the email exists in the database
+      // Check if the email exists in the database and send reset link
       const response = await axios.post(
-        "http://localhost:5000/api/checkEmail",
+        "http://localhost:5000/api/check-email",
         { email }
       );
 
       if (response.data.exists) {
-        onEmailConfirmed(email); // Call the function to confirm the email
+        // Show success toast
+        toast({
+          title: "Email Sent.",
+          description: "A reset link has been sent to your email.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        // Redirect to home page after 3 seconds
+        setTimeout(() => {
+          navigate("/"); // Redirect to home
+        }, 3000);
       } else {
         toast({
           title: "Email not found.",

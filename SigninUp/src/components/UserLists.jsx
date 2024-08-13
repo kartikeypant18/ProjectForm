@@ -299,7 +299,7 @@ const UserList = () => {
                 {user.user_email}
               </td>
               <td style={{ padding: "10px", border: "1px solid #dee2e6" }}>
-                {user.contact_number}
+                +{user.contact_number}
               </td>
               <td style={{ padding: "10px", border: "1px solid #dee2e6" }}>
                 {user.user_gender}

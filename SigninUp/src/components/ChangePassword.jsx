@@ -1,6 +1,5 @@
-// ChangePassword.jsx
-"use client";
 import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom"; // For extracting query parameters
 import axios from "axios";
 import {
   Flex,
@@ -15,7 +14,9 @@ import {
   useToast,
 } from "@chakra-ui/react";
 
-export default function ChangePassword({ email }) {
+export default function ChangePassword() {
+  const [searchParams] = useSearchParams(); // React Router hook for reading query params
+  const token = searchParams.get("token"); // Extract the token from the URL
   const toast = useToast();
   const [formData, setFormData] = useState({
     password: "",
@@ -48,7 +49,7 @@ export default function ChangePassword({ email }) {
     try {
       const response = await axios.post(
         "http://localhost:5000/api/changepassword",
-        { email, password } // Include email in the request
+        { newPassword: password, token } // Change password to newPassword
       );
 
       if (response.data.success) {
@@ -117,6 +118,7 @@ export default function ChangePassword({ email }) {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
+                  required // Add required attribute for better UX
                 />
               </FormControl>
 
@@ -127,6 +129,7 @@ export default function ChangePassword({ email }) {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  required // Add required attribute for better UX
                 />
               </FormControl>
 

@@ -249,3 +249,10 @@ tbody tr:nth-child(even) {
   height: 800px; /* Adjust height as needed */
   width: 100%; /* Make it responsive */
 }
+/* ContactRequest.css */
+.ck-editor__editable {
+  min-height: 300px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 10px; /* Optional: Adds padding inside the editor */
+}

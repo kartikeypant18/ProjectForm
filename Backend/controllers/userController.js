@@ -87,21 +87,50 @@ const loginUser = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+const sendPasswordResetEmail = async (user_email, token) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_ADDRESS,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
 
+        const resetLink = `http://localhost:5173/reset-password?token=${token}`;
 
-const checkEmail = (req, res) => {
+        const info = await transporter.sendMail({
+            from: `"Your App Name" <${process.env.EMAIL_ADDRESS}>`,
+            to: user_email,
+            subject: "Password Reset Request",
+            text: `You requested a password reset. Please click the following link to reset your password: ${resetLink}`,
+            html: `<b>You requested a password reset. Please click the following link to reset your password:</b> <a href="${resetLink}">${resetLink}</a>`,
+        });
+
+        console.log("Password reset email sent: %s", info.messageId);
+    } catch (error) {
+        console.error('Error sending password reset email:', error);
+    }
+};
+
+const checkEmail = async (req, res) => {
     const { email } = req.body;
 
     try {
-        db.query('SELECT * FROM users WHERE user_email = ?', [email], (err, results) => {
+        db.query('SELECT * FROM users WHERE user_email = ?', [email], async (err, results) => {
             if (err) throw err;
 
             if (results.length === 0) {
                 return res.status(400).json({ message: 'Email not found', exists: false });
             }
 
-            const token = generateToken(results[0].user_id);
-            res.json({ exists: true, token, userId: results[0].user_id });
+            const user = results[0];
+            const resetToken = jwt.sign({ id: user.user_id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+            // Send password reset email
+            await sendPasswordResetEmail(user.user_email, resetToken);
+
+            res.json({ exists: true, message: 'Password reset link sent to email' });
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -110,15 +139,18 @@ const checkEmail = (req, res) => {
 
 
 const changePassword = async (req, res) => {
-    const { email, password } = req.body;
+    const { token, newPassword } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
+    if (!token || !newPassword) {
+        return res.status(400).json({ message: 'Token and new password are required' });
     }
 
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        db.query('UPDATE users SET user_password = ? WHERE user_email = ?', [hashedPassword, email], (err, result) => {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id;
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        db.query('UPDATE users SET user_password = ? WHERE user_id = ?', [hashedPassword, userId], (err, result) => {
             if (err) throw err;
 
             if (result.affectedRows === 0) {
@@ -128,10 +160,9 @@ const changePassword = async (req, res) => {
             res.json({ success: true, message: 'Password updated successfully' });
         });
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Invalid or expired token' });
     }
 };
-
 
 const getUsers = (req, res) => {
     const query = `
@@ -203,12 +234,32 @@ const submitContactRequest = (req, res) => {
 
 
 const fetchContactRequests = (req, res) => {
-    const query = 'SELECT contact_id, contact_name, contact_email, contact_number, contact_message FROM contact_requests';
+    const query = `
+        SELECT 
+            contact_id, 
+            contact_name, 
+            contact_email, 
+            contact_number, 
+            contact_message, 
+            attendance_status 
+        FROM contact_requests
+    `;
+    
     db.query(query, (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error("Error fetching contact requests:", err.message);
+            return res.status(500).json({ error: "Internal Server Error" });
+        }
 
         const groupedResults = results.reduce((acc, current) => {
-            const { contact_email, contact_id, contact_name, contact_number, contact_message } = current;
+            const { 
+                contact_id, 
+                contact_name, 
+                contact_email, 
+                contact_number, 
+                contact_message, 
+                attendance_status 
+            } = current;
 
             if (!acc[contact_email]) {
                 acc[contact_email] = {
@@ -216,6 +267,7 @@ const fetchContactRequests = (req, res) => {
                     contact_name: contact_name,
                     contact_email: contact_email,
                     contact_number: contact_number,
+                    attendance_status: attendance_status, // Include attendance status
                     contact_messages: [contact_message],
                 };
             } else {
@@ -228,6 +280,10 @@ const fetchContactRequests = (req, res) => {
         res.json(Object.values(groupedResults));
     });
 };
+
+
+
+
 const insertEmailTemplate = (slug, title, subject, filePath) => {
     const templatePath = path.join(__dirname, '../../SigninUp/src/components/emailtemplates', filePath);
 
@@ -413,7 +469,21 @@ const SetNewPassword = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-
+// In userController.js
+const updateAttendanceStatus = (req, res) => {
+    const { id } = req.params;
+    const { attendance_status } = req.body;
+  
+    // Update the attendance status in the database
+    const query = 'UPDATE contact_requests SET attendance_status = ? WHERE contact_id = ?';
+    db.query(query, [attendance_status, id], (err, result) => {
+      if (err) {
+        return res.status(500).send('Error updating attendance status');
+      }
+      res.send('Attendance status updated successfully');
+    });
+  };
+  
 
 module.exports = {
     fetchCountries,
@@ -431,5 +501,6 @@ module.exports = {
     fetchEmailTemplateBySlug, 
     updateEmailTemplate,
     sendReply,
-    SetNewPassword
+    SetNewPassword,
+    updateAttendanceStatus
 };

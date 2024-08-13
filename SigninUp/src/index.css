@@ -1,0 +1,7 @@
+/* index.css */
+.ckeditor-container .ck-editor__editable {
+  min-height: 300px; /* Adjust as needed */
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}

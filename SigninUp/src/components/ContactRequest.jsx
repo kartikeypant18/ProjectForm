@@ -23,7 +23,10 @@ const ContactRequest = () => {
   }, []);
 
   const handleIconClick = (contact) => {
-    setSelectedContact(contact);
+    setSelectedContact({
+      ...contact,
+      contact_messages: contact.contact_messages || [], // Default to an empty array if undefined
+    });
   };
 
   const handleCloseDetails = () => {
@@ -43,14 +46,35 @@ const ContactRequest = () => {
       email: "pratyushraghuvanshi73@gmail.com", // Add the recipient's email address
     };
 
+    // Send the reply
     axios
       .post("http://localhost:5000/api/sendReply", replyData)
       .then((response) => {
         console.log("Reply sent successfully:", response.data);
         toast.success("Message sent successfully!");
+
+        // Update the attendance status in the database
+        return axios.patch(
+          `http://localhost:5000/api/contact-requests/${selectedContact.contact_id}`,
+          {
+            attendance_status: "attended", // Update this value according to your ENUM
+          }
+        );
+      })
+      .then(() => {
+        // Update the local state to mark the replied contact
+        setContacts((prevContacts) =>
+          prevContacts.map((contact) =>
+            contact.contact_id === selectedContact.contact_id
+              ? { ...contact, replied: true, attendance_status: "attended" }
+              : contact
+          )
+        );
         handleCloseDetails();
       })
-      .catch((error) => console.error("Error sending reply:", error));
+      .catch((error) =>
+        console.error("Error sending reply or updating status:", error)
+      );
   };
 
   return (
@@ -71,15 +95,38 @@ const ContactRequest = () => {
             </thead>
             <tbody>
               {contacts.map((contact) => (
-                <tr key={contact.contact_id}>
+                <tr
+                  key={contact.contact_id}
+                  style={{
+                    backgroundColor:
+                      contact.attendance_status === "attended"
+                        ? "#d4edda" // Light green for attended
+                        : contact.replied
+                        ? "#d4edda" // Light green if replied
+                        : "inherit",
+                  }}
+                >
                   <td>{contact.contact_id}</td>
                   <td>{contact.contact_name}</td>
                   <td>{contact.contact_email}</td>
                   <td>{contact.contact_number}</td>
                   <td>
                     <FaEnvelope
-                      style={{ cursor: "pointer", justifyContent: "center" }}
-                      onClick={() => handleIconClick(contact)}
+                      style={{
+                        cursor:
+                          contact.attendance_status === "attended"
+                            ? "not-allowed"
+                            : "pointer",
+                        color:
+                          contact.attendance_status === "attended"
+                            ? "gray"
+                            : "black",
+                      }}
+                      onClick={() => {
+                        if (contact.attendance_status !== "attended") {
+                          handleIconClick(contact);
+                        }
+                      }}
                     />
                   </td>
                 </tr>
@@ -133,9 +180,13 @@ const ContactRequest = () => {
                 <th>Messages</th>
                 <td>
                   <ol style={{ marginLeft: "1rem" }}>
-                    {selectedContact.contact_messages.map((message, index) => (
-                      <li key={index}>{message}</li>
-                    ))}
+                    {selectedContact?.contact_messages?.length > 0 ? (
+                      selectedContact.contact_messages.map((message, index) => (
+                        <li key={index}>{message}</li>
+                      ))
+                    ) : (
+                      <li>No messages available</li>
+                    )}
                   </ol>
                 </td>
               </tr>
@@ -164,14 +215,15 @@ const ContactRequest = () => {
               className="reply-input"
             />
             <CKEditor
-              style={{ height: "100rem" }}
               editor={ClassicEditor}
               data={reply}
               onChange={(event, editor) => {
                 const data = editor.getData();
                 setReply(data);
               }}
-              placeholder="Reply"
+              config={{
+                placeholder: "Reply",
+              }}
             />
             <button
               style={{ marginTop: "1rem" }}

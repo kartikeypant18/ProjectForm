@@ -17,6 +17,7 @@ import UserList from "./components/UserLists";
 import ContactRequest from "./components/ContactRequest";
 import EmailTemplates from "./components/EmailTemplate";
 import SetNewPassword from "./components/SetNewPassword";
+import CheckEmail from "./components/CheckEmail";
 
 const App = () => {
   return (
@@ -26,7 +27,7 @@ const App = () => {
           <Route path="/signUp" element={<SignUp />} />
           <Route path="/" element={<Login />} />
           <Route path="/reset-password" element={<ChangePassword />} />
-          <Route path="/forgotPassword" element={<ForgotPassword />} />
+          <Route path="/forgotPassword" element={<CheckEmail />} />
           <Route
             path="/homepage"
             element={<ProtectedRoute element={<HomePage />} />}
