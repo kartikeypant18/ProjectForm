@@ -9,6 +9,7 @@ import {
   Input,
   Text,
   VStack,
+  useToast, // Import useToast
 } from "@chakra-ui/react";
 
 const SetNewPassword = () => {
@@ -17,6 +18,7 @@ const SetNewPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const toast = useToast(); // Initialize toast
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +45,16 @@ const SetNewPassword = () => {
       );
 
       if (response.data.success) {
-        setSuccess("Password updated successfully!");
+        // Show success toast
+        toast({
+          title: "Success",
+          description: "Password updated successfully!",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+          position: "top",
+        });
+
         setOldPassword("");
         setNewPassword("");
         setConfirmPassword("");
@@ -72,11 +83,6 @@ const SetNewPassword = () => {
       {error && (
         <Text color="red.500" textAlign="center" mb="4">
           {error}
-        </Text>
-      )}
-      {success && (
-        <Text color="green.500" textAlign="center" mb="4">
-          {success}
         </Text>
       )}
       <form onSubmit={handleSubmit}>

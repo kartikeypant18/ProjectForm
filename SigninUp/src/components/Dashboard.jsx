@@ -155,7 +155,6 @@ const Dashboard = () => {
 
   return (
     <div style={{ padding: "20px" }}>
-      {/* Statistics Container */}
       <div
         style={{
           marginBottom: "20px",
@@ -170,7 +169,7 @@ const Dashboard = () => {
         <div
           style={{
             flex: 1,
-            backgroundColor: "#fff", // White background for each stat box
+            backgroundColor: "#fff",
             padding: "10px",
             borderRadius: "8px",
             textAlign: "center",

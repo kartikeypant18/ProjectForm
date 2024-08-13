@@ -5,6 +5,7 @@ const generateToken = require('../middlewares/generateTokenAndCookies.js');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require("nodemailer");
+const axios = require("axios");
 
 const fetchCountries = (req, res) => {
     db.query(
@@ -87,6 +88,11 @@ const loginUser = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+const getEmailTemplate = async (slug) => {
+    const response = await axios.get(`http://localhost:5000/api/email-templates/${slug}`);
+    return response.data;
+};
+
 const sendPasswordResetEmail = async (user_email, token) => {
     try {
         const transporter = nodemailer.createTransport({
@@ -99,12 +105,17 @@ const sendPasswordResetEmail = async (user_email, token) => {
 
         const resetLink = `http://localhost:5173/reset-password?token=${token}`;
 
+       
+        const template = await getEmailTemplate("forgot_password");
+
+        
+        let emailContent = template.temp_content.replace("{reset_link}", resetLink);
+
         const info = await transporter.sendMail({
-            from: `"Your App Name" <${process.env.EMAIL_ADDRESS}>`,
+            from: `"MeetX" <${process.env.EMAIL_ADDRESS}>`,
             to: user_email,
             subject: "Password Reset Request",
-            text: `You requested a password reset. Please click the following link to reset your password: ${resetLink}`,
-            html: `<b>You requested a password reset. Please click the following link to reset your password:</b> <a href="${resetLink}">${resetLink}</a>`,
+            html: emailContent, 
         });
 
         console.log("Password reset email sent: %s", info.messageId);
@@ -112,6 +123,7 @@ const sendPasswordResetEmail = async (user_email, token) => {
         console.error('Error sending password reset email:', error);
     }
 };
+
 
 const checkEmail = async (req, res) => {
     const { email } = req.body;
@@ -127,7 +139,7 @@ const checkEmail = async (req, res) => {
             const user = results[0];
             const resetToken = jwt.sign({ id: user.user_id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-            // Send password reset email
+           
             await sendPasswordResetEmail(user.user_email, resetToken);
 
             res.json({ exists: true, message: 'Password reset link sent to email' });
@@ -267,7 +279,7 @@ const fetchContactRequests = (req, res) => {
                     contact_name: contact_name,
                     contact_email: contact_email,
                     contact_number: contact_number,
-                    attendance_status: attendance_status, // Include attendance status
+                    attendance_status: attendance_status, 
                     contact_messages: [contact_message],
                 };
             } else {
@@ -469,7 +481,7 @@ const SetNewPassword = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-// In userController.js
+
 const updateAttendanceStatus = (req, res) => {
     const { id } = req.params;
     const { attendance_status } = req.body;

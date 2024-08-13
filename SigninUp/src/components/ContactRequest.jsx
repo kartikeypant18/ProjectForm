@@ -25,7 +25,7 @@ const ContactRequest = () => {
   const handleIconClick = (contact) => {
     setSelectedContact({
       ...contact,
-      contact_messages: contact.contact_messages || [], // Default to an empty array if undefined
+      contact_messages: contact.contact_messages || [],
     });
   };
 
@@ -43,26 +43,23 @@ const ContactRequest = () => {
     const replyData = {
       subject,
       reply,
-      email: "pratyushraghuvanshi73@gmail.com", // Add the recipient's email address
+      email: "pratyushraghuvanshi73@gmail.com",
     };
 
-    // Send the reply
     axios
       .post("http://localhost:5000/api/sendReply", replyData)
       .then((response) => {
         console.log("Reply sent successfully:", response.data);
         toast.success("Message sent successfully!");
 
-        // Update the attendance status in the database
         return axios.patch(
           `http://localhost:5000/api/contact-requests/${selectedContact.contact_id}`,
           {
-            attendance_status: "attended", // Update this value according to your ENUM
+            attendance_status: "attended",
           }
         );
       })
       .then(() => {
-        // Update the local state to mark the replied contact
         setContacts((prevContacts) =>
           prevContacts.map((contact) =>
             contact.contact_id === selectedContact.contact_id
@@ -100,9 +97,9 @@ const ContactRequest = () => {
                   style={{
                     backgroundColor:
                       contact.attendance_status === "attended"
-                        ? "#d4edda" // Light green for attended
+                        ? "#d4edda"
                         : contact.replied
-                        ? "#d4edda" // Light green if replied
+                        ? "#d4edda"
                         : "inherit",
                   }}
                 >

@@ -49,7 +49,7 @@ export default function ChangePassword() {
     try {
       const response = await axios.post(
         "http://localhost:5000/api/changepassword",
-        { newPassword: password, token } // Change password to newPassword
+        { newPassword: password, token }
       );
 
       if (response.data.success) {
@@ -61,7 +61,7 @@ export default function ChangePassword() {
           isClosable: true,
         });
         setTimeout(() => {
-          window.location.href = "/"; // Redirect to login page
+          window.location.href = "/";
         }, 2000);
       } else {
         toast({
@@ -118,7 +118,7 @@ export default function ChangePassword() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  required // Add required attribute for better UX
+                  required
                 />
               </FormControl>
 
@@ -129,7 +129,7 @@ export default function ChangePassword() {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  required // Add required attribute for better UX
+                  required
                 />
               </FormControl>
 

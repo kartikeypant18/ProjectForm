@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   Flex,
@@ -18,7 +18,7 @@ import {
 export default function CheckEmail() {
   const toast = useToast();
   const [email, setEmail] = useState("");
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setEmail(e.target.value);
@@ -28,14 +28,12 @@ export default function CheckEmail() {
     e.preventDefault();
 
     try {
-      // Check if the email exists in the database and send reset link
       const response = await axios.post(
         "http://localhost:5000/api/check-email",
         { email }
       );
 
       if (response.data.exists) {
-        // Show success toast
         toast({
           title: "Email Sent.",
           description: "A reset link has been sent to your email.",
@@ -43,10 +41,10 @@ export default function CheckEmail() {
           duration: 3000,
           isClosable: true,
         });
-        // Redirect to home page after 3 seconds
+
         setTimeout(() => {
-          navigate("/"); // Redirect to home
-        }, 3000);
+          navigate("/");
+        }, 2000);
       } else {
         toast({
           title: "Email not found.",

@@ -23,7 +23,7 @@ const AddUserModal = ({ isOpen, onClose }) => {
     user_country_code: "",
     user_mobile_number: "",
     user_gender: "",
-    state_country_id: "", // Use state_country_id for country selection
+    state_country_id: "",
     state_id: "",
     user_password: "",
   });
@@ -58,7 +58,7 @@ const AddUserModal = ({ isOpen, onClose }) => {
           console.error("Error fetching states:", error);
         }
       } else {
-        setStates([]); // Clear states if no country is selected
+        setStates([]);
       }
     };
     fetchStates();
@@ -67,7 +67,7 @@ const AddUserModal = ({ isOpen, onClose }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUserData((prevData) => ({ ...prevData, [name]: value }));
-    // Reset state_id when country changes
+
     if (name === "state_country_id") {
       setUserData((prevData) => ({ ...prevData, state_id: "" }));
     }
@@ -174,7 +174,7 @@ const AddUserModal = ({ isOpen, onClose }) => {
           </RadioGroup>
           <Select
             placeholder="Select Country"
-            name="state_country_id" // Keep this as state_country_id
+            name="state_country_id"
             value={userData.state_country_id}
             onChange={handleChange}
             mb={3}
