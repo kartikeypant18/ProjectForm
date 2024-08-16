@@ -9,6 +9,7 @@ const EmailTemplates = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [editorData, setEditorData] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedSlug, setSelectedSlug] = useState(""); // State for storing the slug
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -32,6 +33,7 @@ const EmailTemplates = () => {
       );
       setSelectedTemplate(response.data);
       setEditorData(response.data.temp_content);
+      setSelectedSlug(slug); // Set the selected slug here
       setIsEditing(false);
     } catch (error) {
       console.error("Error fetching template content:", error);
@@ -45,12 +47,14 @@ const EmailTemplates = () => {
 
   const handleSaveTemplate = async () => {
     try {
+      // Log the slug and content being saved
+      console.log(`Saving template: ${selectedSlug}`);
+      console.log(`Content being saved: ${editorData}`);
+
       await axios.put(
-        `http://localhost:5000/api/save-email-templates/${selectedTemplate.temp_slug}`,
+        `http://localhost:5000/api/save-email-templates/${selectedSlug}`, // Use the state for the slug
         {
-          temp_slug: selectedTemplate.temp_slug,
-          temp_content: editorData,
-          file_path: `${selectedTemplate.temp_slug}.html`,
+          temp_content: editorData, // Send the updated content
         }
       );
       alert("Template updated successfully!");

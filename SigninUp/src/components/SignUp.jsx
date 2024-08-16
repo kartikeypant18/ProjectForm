@@ -21,6 +21,7 @@ import {
   Link,
   useToast,
 } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -40,6 +41,7 @@ export default function SignUp() {
   const [states, setStates] = useState([]);
   const [isChecked, setIsChecked] = useState(false);
   const toast = useToast();
+  const navigate = useNavigate();
 
   const resetForm = () => {
     setFormData({
@@ -205,6 +207,7 @@ export default function SignUp() {
             isClosable: true,
           });
           resetForm();
+          navigate("/");
         })
         .catch((error) => {
           console.error("There was an error registering the user!", error);

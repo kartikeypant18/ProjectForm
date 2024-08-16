@@ -11,6 +11,8 @@ import {
   FormControl,
   FormLabel,
   Input,
+  Select,
+  HStack,
 } from "@chakra-ui/react";
 import axios from "axios";
 
@@ -18,24 +20,47 @@ const EditUserModal = ({ isOpen, onClose, user, refreshUsers }) => {
   const [formData, setFormData] = useState({
     user_name: "",
     user_email: "",
-    contact_number: "",
+    user_country_code: "",
+    user_mobile_number: "",
     user_gender: "",
     country: "",
     state: "",
   });
 
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+
   useEffect(() => {
     if (user) {
+      const [user_country_code, user_mobile_number] =
+        user.contact_number.split(" ");
       setFormData({
         user_name: user.user_name,
         user_email: user.user_email,
-        contact_number: user.contact_number,
+        user_country_code: `+${user_country_code}`,
+        user_mobile_number,
         user_gender: user.user_gender,
         country: user.country,
         state: user.state,
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/country")
+      .then((response) => setCountries(response.data))
+      .catch((error) => console.error("Failed to fetch countries:", error));
+  }, []);
+
+  useEffect(() => {
+    if (formData.country) {
+      axios
+        .get(`http://localhost:5000/api/states?country_id=${formData.country}`)
+        .then((response) => setStates(response.data))
+        .catch((error) => console.error("Failed to fetch states:", error));
+    }
+  }, [formData.country]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,10 +71,14 @@ const EditUserModal = ({ isOpen, onClose, user, refreshUsers }) => {
   };
 
   const handleSubmit = async () => {
+    const contact_number = `${formData.user_country_code} ${formData.user_mobile_number}`;
+
+    const updatedData = { ...formData, contact_number };
+
     try {
       await axios.put(
         `http://localhost:5000/api/update/${user.user_id}`,
-        formData
+        updatedData
       );
       refreshUsers();
       onClose();
@@ -79,15 +108,33 @@ const EditUserModal = ({ isOpen, onClose, user, refreshUsers }) => {
               name="user_email"
               value={formData.user_email}
               onChange={handleChange}
+              isDisabled
+              borderColor="red.500"
+              _disabled={{
+                opacity: 1,
+                cursor: "not-allowed",
+                borderColor: "red.500",
+              }}
             />
           </FormControl>
           <FormControl>
             <FormLabel>Contact Number</FormLabel>
-            <Input
-              name="contact_number"
-              value={formData.contact_number}
-              onChange={handleChange}
-            />
+            <HStack>
+              <Input
+                name="user_country_code"
+                value={formData.user_country_code}
+                onChange={handleChange}
+                placeholder="Country Code"
+                width="30%"
+              />
+              <Input
+                name="user_mobile_number"
+                value={formData.user_mobile_number}
+                onChange={handleChange}
+                placeholder="Mobile Number"
+                width="70%"
+              />
+            </HStack>
           </FormControl>
           <FormControl>
             <FormLabel>Gender</FormLabel>

@@ -73,4 +73,6 @@ router.post("/setnewpassword", authenticateToken, SetNewPassword);
 // Route to update the attendance status of a contact request by ID
 router.patch("/contact-requests/:id", updateAttendanceStatus);
 
+
+
 module.exports = router;

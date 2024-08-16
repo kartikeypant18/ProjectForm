@@ -33,7 +33,6 @@ const App = () => {
             element={<ProtectedRoute element={<HomePage />} />}
           >
             <Route path="" element={<Navigate to="users" />} />{" "}
-            {/* Default route */}
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="users" element={<UserList />} />
             <Route path="contact-request" element={<ContactRequest />} />

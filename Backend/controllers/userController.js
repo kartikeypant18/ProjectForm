@@ -50,9 +50,17 @@ const signupUser = async (req, res) => {
                     created_at: new Date(),
                 };
 
-                db.query('INSERT INTO users SET ?', newUser, (err, result) => {
+                db.query('INSERT INTO users SET ?', newUser, async (err, result) => {
                     if (err) throw err;
+
                     const token = generateToken(result.insertId);
+
+                    try {
+                        await sendWelcomeEmail(user_name,user_email);
+                    } catch (emailError) {
+                        console.error('Error sending welcome email:', emailError);
+                    }
+
                     res.status(201).json({ token });
                 });
             }
@@ -62,6 +70,33 @@ const signupUser = async (req, res) => {
     }
 };
 
+const sendWelcomeEmail = async (user_name,user_email) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_ADDRESS,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
+
+        const template = await getEmailTemplate("signup");
+
+        const emailContent = template.temp_content.replace("{user_name}", user_name);
+
+        const info = await transporter.sendMail({
+            from: `"MeetX" <${process.env.EMAIL_ADDRESS}>`,
+            to: user_email,
+            subject: "Welcome to MeetX!",
+            html: emailContent,
+        });
+
+        console.log("Welcome email sent: %s", info.messageId);
+    } catch (error) {
+        console.error('Error sending welcome email:', error);
+        throw error;
+    }
+};
 
 const loginUser = async (req, res) => {
     const { user_email, user_password } = req.body;
@@ -93,7 +128,7 @@ const getEmailTemplate = async (slug) => {
     return response.data;
 };
 
-const sendPasswordResetEmail = async (user_email, token) => {
+const sendPasswordResetEmail = async (user_email, token,user_name) => {
     try {
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -109,7 +144,10 @@ const sendPasswordResetEmail = async (user_email, token) => {
         const template = await getEmailTemplate("forgot_password");
 
         
-        let emailContent = template.temp_content.replace("{reset_link}", resetLink);
+        let emailContent = template.temp_content
+    .replace("{reset_link}", resetLink)
+    .replace("{user_name}", user_name);
+
 
         const info = await transporter.sendMail({
             from: `"MeetX" <${process.env.EMAIL_ADDRESS}>`,
@@ -140,7 +178,7 @@ const checkEmail = async (req, res) => {
             const resetToken = jwt.sign({ id: user.user_id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
            
-            await sendPasswordResetEmail(user.user_email, resetToken);
+            await sendPasswordResetEmail(user.user_email, resetToken,user.user_name);
 
             res.json({ exists: true, message: 'Password reset link sent to email' });
         });
@@ -161,18 +199,63 @@ const changePassword = async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const userId = decoded.id;
 
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        db.query('UPDATE users SET user_password = ? WHERE user_id = ?', [hashedPassword, userId], (err, result) => {
+        // Fetch user data to get email and name
+        db.query('SELECT user_email, user_name FROM users WHERE user_id = ?', [userId], async (err, results) => {
             if (err) throw err;
 
-            if (result.affectedRows === 0) {
-                return res.status(400).json({ message: 'Failed to update password. User not found.' });
+            if (results.length === 0) {
+                return res.status(400).json({ message: 'User not found' });
             }
 
-            res.json({ success: true, message: 'Password updated successfully' });
+            const { user_email, user_name } = results[0];
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            db.query('UPDATE users SET user_password = ? WHERE user_id = ?', [hashedPassword, userId], async (err, result) => {
+                if (err) throw err;
+
+                if (result.affectedRows === 0) {
+                    return res.status(400).json({ message: 'Failed to update password. User not found.' });
+                }
+
+                try {
+                    await sendPasswordChangeConfirmationEmail(user_email, user_name);
+                } catch (emailError) {
+                    console.error('Error sending password change confirmation email:', emailError);
+                }
+
+                res.json({ success: true, message: 'Password updated successfully' });
+            });
         });
     } catch (error) {
         res.status(500).json({ message: 'Invalid or expired token' });
+    }
+};
+
+const sendPasswordChangeConfirmationEmail = async (user_email, user_name) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_ADDRESS,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
+
+        const template = await getEmailTemplate("change_password");
+
+        const emailContent = template.temp_content.replace("{user_name}", user_name);
+
+        const info = await transporter.sendMail({
+            from: `"MeetX" <${process.env.EMAIL_ADDRESS}>`,
+            to: user_email,
+            subject: "Your password has been changed",
+            html: emailContent,
+        });
+
+        console.log("Password change confirmation email sent: %s", info.messageId);
+    } catch (error) {
+        console.error('Error sending password change confirmation email:', error);
+        throw error;
     }
 };
 
@@ -234,27 +317,104 @@ const editUser = (req, res) => {
 
 
 const submitContactRequest = (req, res) => {
-    const { name, email, phone, message } = req.body;
+    const { name, email, phone, subject, message } = req.body;
 
-    const query = 'INSERT INTO contact_requests (contact_name, contact_email, contact_number, contact_message) VALUES (?, ?, ?, ?)';
-    db.query(query, [name, email, phone, message], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
+    // Query to check if a contact request with the same email already exists
+    const checkExistingContactQuery = `
+        SELECT contact_id, contact_status FROM contact_requests WHERE contact_email = ?`;
 
-        res.status(200).json({ message: 'Contact request submitted successfully' });
+    db.query(checkExistingContactQuery, [email], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        if (results.length > 0) {
+            // If a contact request already exists
+            const contact_id = results[0].contact_id;
+            const contact_status = results[0].contact_status;
+
+            // Update status if it is 'attended'
+            if (contact_status === 'attended') {
+                const updateStatusQuery = `
+                    UPDATE contact_requests 
+                    SET contact_status = 'not_attended' 
+                    WHERE contact_id = ?`;
+
+                db.query(updateStatusQuery, [contact_id], (err) => {
+                    if (err) {
+                        return res.status(500).json({ error: err.message });
+                    }
+
+                    // Insert the new message into message_requests
+                    const insertMessageRequestQuery = `
+                        INSERT INTO message_requests (contact_id, m_req_message) 
+                        VALUES (?, ?)`;
+
+                    db.query(insertMessageRequestQuery, [contact_id, message], (err) => {
+                        if (err) {
+                            return res.status(500).json({ error: err.message });
+                        }
+
+                        res.status(200).json({ message: 'Message added to existing contact request successfully' });
+                    });
+                });
+            } else {
+                // Insert the new message directly if status is not 'attended'
+                const insertMessageRequestQuery = `
+                    INSERT INTO message_requests (contact_id, m_req_message) 
+                    VALUES (?, ?)`;
+
+                db.query(insertMessageRequestQuery, [contact_id, message], (err) => {
+                    if (err) {
+                        return res.status(500).json({ error: err.message });
+                    }
+
+                    res.status(200).json({ message: 'Message added to existing contact request successfully' });
+                });
+            }
+        } else {
+            // If no existing contact request, insert a new one into contact_requests and message_requests
+            const insertContactRequestQuery = `
+                INSERT INTO contact_requests (contact_name, contact_email, contact_number, contact_subject) 
+                VALUES (?, ?, ?, ?)`;
+
+            db.query(insertContactRequestQuery, [name, email, phone, subject], (err, result) => {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+
+                const contact_id = result.insertId;
+
+                const insertMessageRequestQuery = `
+                    INSERT INTO message_requests (contact_id, m_req_message) 
+                    VALUES (?, ?)`;
+
+                db.query(insertMessageRequestQuery, [contact_id, message], (err) => {
+                    if (err) {
+                        return res.status(500).json({ error: err.message });
+                    }
+
+                    res.status(200).json({ message: 'New contact request submitted successfully' });
+                });
+            });
+        }
     });
 };
+
+
 
 
 const fetchContactRequests = (req, res) => {
     const query = `
         SELECT 
-            contact_id, 
-            contact_name, 
-            contact_email, 
-            contact_number, 
-            contact_message, 
-            attendance_status 
-        FROM contact_requests
+            cr.contact_id, 
+            cr.contact_name, 
+            cr.contact_email, 
+            cr.contact_number, 
+            mr.m_req_message AS contact_message, 
+            cr.contact_status 
+        FROM contact_requests cr
+        LEFT JOIN message_requests mr ON cr.contact_id = mr.contact_id
     `;
     
     db.query(query, (err, results) => {
@@ -270,7 +430,7 @@ const fetchContactRequests = (req, res) => {
                 contact_email, 
                 contact_number, 
                 contact_message, 
-                attendance_status 
+                contact_status 
             } = current;
 
             if (!acc[contact_email]) {
@@ -279,7 +439,7 @@ const fetchContactRequests = (req, res) => {
                     contact_name: contact_name,
                     contact_email: contact_email,
                     contact_number: contact_number,
-                    attendance_status: attendance_status, 
+                    contact_status: contact_status, 
                     contact_messages: [contact_message],
                 };
             } else {
@@ -292,6 +452,8 @@ const fetchContactRequests = (req, res) => {
         res.json(Object.values(groupedResults));
     });
 };
+
+
 
 
 
@@ -371,10 +533,10 @@ const fetchEmailTemplateBySlug = (req, res) => {
     });
 };
 const updateEmailTemplate = (req, res) => {
-    const { slug } = req.params;
-    const { temp_content, file_path } = req.body;
-
-    
+    const { slug } = req.params; 
+    const { temp_content } = req.body;
+    console.log(`Received request to update template: ${slug}`);
+    console.log(`New content: ${temp_content}`);
     const updateQuery = `
       UPDATE Email_templates 
       SET temp_content = ?, temp_updated_at = NOW() 
@@ -382,55 +544,64 @@ const updateEmailTemplate = (req, res) => {
     `;
 
     db.query(updateQuery, [temp_content, slug], (err, result) => {
-      if (err) {
-        console.error('Error updating template in database:', err);
-        return res.status(500).json({ error: 'Internal Server Error' });
-      }
-
-      
-      const templatePath = path.join(__dirname, '../../SigninUp/src/components/emailtemplates', file_path);
-
-      fs.writeFile(templatePath, temp_content, 'utf8', (err) => {
         if (err) {
-          console.error(`Error writing file ${file_path}:`, err);
-          return res.status(500).json({ error: 'Error writing to file' });
+            console.error('Error updating template in database:', err);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
 
-        console.log(`Template ${slug} updated successfully`);
+        console.log(`Template ${slug} updated successfully in the database`);
         res.status(200).json({ message: 'Template updated successfully!' });
-      });
     });
 };
 
+  
 
 
-const sendReply = async (req, res) => {
-    const { subject, reply, email } = req.body;
-
-    try {
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_ADDRESS, 
-                pass: process.env.EMAIL_PASSWORD, 
-            },
-        });
-
-        const info = await transporter.sendMail({
-            from: `"Kartikey Pant" <${process.env.EMAIL_ADDRESS}>`,
-            to: email,
-            subject: subject,
-            text: reply,
-            html: `<b>${reply}</b>`,
-        });
-
-        console.log("Message sent: %s", info.messageId);
-        res.status(200).json({ message: 'Reply sent successfully', messageId: info.messageId });
-    } catch (error) {
-        console.error('Error sending reply:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+function sendReply(req, res) {
+    const { contact_id, message } = req.body;
+  
+    if (!contact_id || !message) {
+      return res.status(400).json({ error: "contact_id and message are required" });
     }
-};
+  
+    const insertQuery = "INSERT INTO message_sent (contact_id, m_sent_message, m_sent_created_at) VALUES (?, ?, NOW())";
+    const insertValues = [contact_id, message];
+  
+    db.query(insertQuery, insertValues, (insertErr, insertResult) => {
+      if (insertErr) {
+        console.error("Insert error:", insertErr);
+        return res.status(500).json({ error: "Failed to send message" });
+      }
+  
+      if (insertResult.affectedRows > 0) {
+        const updateQuery = "UPDATE contact_requests SET contact_status = 'attended' WHERE contact_id = ?";
+        const updateValues = [contact_id];
+  
+        db.query(updateQuery, updateValues, (updateErr, updateResult) => {
+          if (updateErr) {
+            console.error("Update error:", updateErr);
+            return res.status(500).json({ error: "Failed to update contact status" });
+          }
+  
+          if (updateResult.affectedRows > 0) {
+            return res.status(200).json({ message: "Reply sent and status updated successfully" });
+          } else {
+            return res.status(400).json({ error: "Failed to update contact status" });
+          }
+        });
+      } else {
+        return res.status(400).json({ error: "Failed to send message" });
+      }
+    });
+  }
+  
+
+
+
+
+
+
+
 const SetNewPassword = async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     const token = req.headers.authorization?.split(' ')[1];

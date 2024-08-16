@@ -40,38 +40,33 @@ const ContactRequest = () => {
   };
 
   const handleSendReply = () => {
+    if (!reply || !selectedContact?.contact_id) {
+      toast.error("Please fill in all fields before sending.");
+      return;
+    }
+
     const replyData = {
-      subject,
-      reply,
-      email: "pratyushraghuvanshi73@gmail.com",
+      contact_id: selectedContact.contact_id,
+      message: reply,
     };
 
     axios
       .post("http://localhost:5000/api/sendReply", replyData)
       .then((response) => {
-        console.log("Reply sent successfully:", response.data);
         toast.success("Message sent successfully!");
 
-        return axios.patch(
-          `http://localhost:5000/api/contact-requests/${selectedContact.contact_id}`,
-          {
-            attendance_status: "attended",
-          }
-        );
-      })
-      .then(() => {
         setContacts((prevContacts) =>
           prevContacts.map((contact) =>
             contact.contact_id === selectedContact.contact_id
-              ? { ...contact, replied: true, attendance_status: "attended" }
+              ? { ...contact, replied: true, contact_status: "attended" }
               : contact
           )
         );
         handleCloseDetails();
       })
-      .catch((error) =>
-        console.error("Error sending reply or updating status:", error)
-      );
+      .catch((error) => {
+        console.error("Error sending reply or updating status:", error);
+      });
   };
 
   return (
@@ -96,11 +91,11 @@ const ContactRequest = () => {
                   key={contact.contact_id}
                   style={{
                     backgroundColor:
-                      contact.attendance_status === "attended"
-                        ? "#d4edda"
+                      contact.contact_status === "attended"
+                        ? "#d4edda" // Light green color for attended
                         : contact.replied
-                        ? "#d4edda"
-                        : "inherit",
+                        ? "#d4edda" // Light green color if replied
+                        : "inherit", // Default color if not attended
                   }}
                 >
                   <td>{contact.contact_id}</td>
@@ -111,16 +106,16 @@ const ContactRequest = () => {
                     <FaEnvelope
                       style={{
                         cursor:
-                          contact.attendance_status === "attended"
+                          contact.contact_status === "attended"
                             ? "not-allowed"
                             : "pointer",
                         color:
-                          contact.attendance_status === "attended"
+                          contact.contact_status === "attended"
                             ? "gray"
                             : "black",
                       }}
                       onClick={() => {
-                        if (contact.attendance_status !== "attended") {
+                        if (contact.contact_status !== "attended") {
                           handleIconClick(contact);
                         }
                       }}
