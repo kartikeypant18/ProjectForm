@@ -7,34 +7,22 @@ body {
 }
 
 /* Container Styles */
-.table-container, .details-container {
-  margin-top: 0;
+.table-container, .chat-container {
+  margin: 2rem auto;
   padding: 20px;
   background-color: #f8f9fa;
-  width: 100%;
-  margin: 2rem;
+  width: 90%;
+  max-width: 1200px;
 }
 
 /* Header Styles */
-.table-header {
+.table-header, .chat-title {
   padding: 15px;
   color: white;
   background: #29395f;
   font-weight: bold;
   font-size: 1.6rem;
-  margin-bottom: 2rem;
-  width: 100%;
-}
-
-/* Search Bar Styles */
-.search-bar-container {
-  margin-top: 2rem;
-}
-
-.search-bar {
-  color: black;
-  width: 25rem;
-  border-color: black;
+  margin-bottom: 1rem;
 }
 
 /* Table Styles */
@@ -60,123 +48,15 @@ tbody tr:nth-child(even) {
   background-color: #f2f2f2;
 }
 
-/* Actions Button Styles */
-.actions button {
-  margin-right: 5px;
-}
-
-/* Pagination Styles */
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-}
-
-.pagination button {
-  padding: 8px 12px;
-  margin: 0 5px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.pagination button.prev-next {
-  background-color: #29395f;
-  color: white;
-}
-
-.pagination button.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination button.active {
-  background-color: #29395f;
-  color: white;
-}
-
-.pagination button.inactive {
-  background-color: #e9ecef;
-  color: black;
-}
-
-/* Modal Styles */
-.modal {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Black w/ opacity */
-}
-
-.modal-content {
-  background-color: #fefefe;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
-  max-width: 600px;
-  position: relative;
-}
-
-.modal-content p {
-  margin: 10px 0;
-}
-
-.close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 28px;
-  cursor: pointer;
-}
-
-.close:hover, .close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-/* Modal Table Styles */
-.modal-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-.modal-table th, .modal-table td {
-  padding: 10px;
-  border: 1px solid #dee2e6;
-}
-
-.modal-table th {
-  background-color: #e9ecef;
-}
-
-.modal-table tbody tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-/* Contact Details Styles */
-.details-container {
-  border: 1px solid #ccc;
-  padding: 20px;
-  border-radius: 4px;
-  width: 770px;
-  margin-left: 14rem;
-}
-
-.details-header {
+/* Chat Header Styles */
+.chat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
 
-.close-details-button {
+.close-chat-button {
   background-color: white;
   color: black;
   border: none;
@@ -192,27 +72,98 @@ tbody tr:nth-child(even) {
   display: flex;
   align-items: center; /* Center vertically */
   justify-content: center; /* Center horizontally */
-  transition: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
- 
 
-
-.close-details-button:hover {
-  background-color: rgb(255, 0, 0); /* Darker blue on hover */
+.close-chat-button:hover {
+  background-color: rgb(255, 0, 0); /* Darker red on hover */
   transform: scale(1.1); /* Slightly larger on hover */
 }
 
-.close-details-button:focus {
+.close-chat-button:focus {
   outline: none;
   box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.25); /* Focus outline for accessibility */
 }
 
+/* Chat Messages Styles */
+.chat-container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  width: 770px;
+  margin: auto;
+}
 
-.details-table {
-  width: 100%;
+/* Chat Header Styles */
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
 
+.chat-title {
+  font-size: 1.6rem;
+  font-weight: bold;
+}
+
+.close-chat-button {
+  background-color: #ffffff;
+  color: #343a40;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: bold;
+  padding: 8px;
+  line-height: 1;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-chat-button:hover {
+  background-color: #dc3545;
+  color: #ffffff;
+}
+
+/* Messages List Styles */
+.messages-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+
+/* Message Styles */
+.message {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  max-width: 70%;
+}
+
+/* User Message Styles */
+.message.user {
+  background-color: #007bff; /* Blue color for user messages */
+  color: #ffffff; /* White text color for contrast */
+  margin-left: auto; /* Align to the right */
+}
+
+/* Reply and Request Styles */
+.message.reply {
+  background-color: #d4edda; /* Light green for replies */
+  margin-left: auto; /* Align to the right */
+}
+
+.message.request {
+  background-color: #f8f9fa; /* Light grey for requests */
+}
+
+/* Reply Section Styles */
 .reply-section {
   margin-top: 20px;
 }
@@ -223,18 +174,18 @@ tbody tr:nth-child(even) {
   margin-bottom: 10px;
   padding: 10px;
   font-size: 14px;
-  border: 1px solid #ccc;
+  border: 1px solid #ced4da;
   border-radius: 4px;
 }
 
 .reply-textarea {
-  height: 100px;
+  height: 120px;
   resize: vertical;
 }
 
 .send-reply-button {
-  background-color: #4caf50;
-  color: white;
+  background-color: #28a745;
+  color: #ffffff;
   padding: 10px 20px;
   border: none;
   border-radius: 4px;
@@ -243,16 +194,20 @@ tbody tr:nth-child(even) {
 }
 
 .send-reply-button:hover {
-  background-color: #45a049;
+  background-color: #218838;
 }
+
+/* CKEditor Styles */
 .ck-editor {
-  height: 800px; /* Adjust height as needed */
-  width: 100%; /* Make it responsive */
+  height: 200px; /* Adjust height */
+  width: 100%;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
 }
-/* ContactRequest.css */
+
 .ck-editor__editable {
-  min-height: 300px;
-  max-height: 600px;
+  min-height: 150px;
+  max-height: 200px;
   overflow-y: auto;
-  padding: 10px; /* Optional: Adds padding inside the editor */
+  padding: 10px;
 }

@@ -316,6 +316,145 @@ const editUser = (req, res) => {
 };
 
 
+const sendReply = (req, res) => {
+    const { contact_id, message } = req.body;
+
+    if (!contact_id || !message) {
+        return res.status(400).json({ error: "contact_id and message are required" });
+    }
+
+    // Strip HTML tags from the message
+    const plainMessage = message.replace(/<\/?[^>]+(>|$)/g, "");
+
+    const insertQuery = "INSERT INTO message_sent (contact_id, m_sent_message, m_sent_created_at) VALUES (?, ?, NOW())";
+    const insertValues = [contact_id, plainMessage];
+
+    db.query(insertQuery, insertValues, (insertErr, insertResult) => {
+        if (insertErr) {
+            console.error("Insert error:", insertErr);
+            return res.status(500).json({ error: "Failed to send message" });
+        }
+
+        if (insertResult.affectedRows > 0) {
+            const updateQuery = "UPDATE contact_requests SET contact_status = 'attended' WHERE contact_id = ?";
+            const updateValues = [contact_id];
+
+            db.query(updateQuery, updateValues, (updateErr, updateResult) => {
+                if (updateErr) {
+                    console.error("Update error:", updateErr);
+                    return res.status(500).json({ error: "Failed to update contact status" });
+                }
+
+                if (updateResult.affectedRows > 0) {
+                    return res.status(200).json({ message: "Reply sent and status updated successfully" });
+                } else {
+                    return res.status(400).json({ error: "Failed to update contact status" });
+                }
+            });
+        } else {
+            return res.status(400).json({ error: "Failed to send message" });
+        }
+    });
+};
+
+
+
+const fetchContactRequests = (req, res) => {
+    const query = `
+        SELECT 
+            contact_id, 
+            contact_name, 
+            contact_email, 
+            contact_number, 
+            message_type, 
+            message_content, 
+            created_at, 
+            contact_status 
+        FROM (
+            SELECT 
+                cr.contact_id, 
+                cr.contact_name, 
+                cr.contact_email, 
+                cr.contact_number, 
+                'request' AS message_type, 
+                mr.m_req_message AS message_content, 
+                mr.m_req_created_at AS created_at, 
+                cr.contact_status 
+            FROM contact_requests cr
+            LEFT JOIN message_requests mr 
+            ON cr.contact_id = mr.contact_id
+
+            UNION ALL
+
+            SELECT 
+                cr.contact_id, 
+                cr.contact_name, 
+                cr.contact_email, 
+                cr.contact_number, 
+                'reply' AS message_type, 
+                ms.m_sent_message AS message_content, 
+                ms.m_sent_created_at AS created_at, 
+                cr.contact_status 
+            FROM contact_requests cr
+            LEFT JOIN message_sent ms 
+            ON cr.contact_id = ms.contact_id
+        ) AS combined_messages
+        ORDER BY created_at ASC;
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error("Error fetching contact requests:", err.message);
+            return res.status(500).json({ error: "Internal Server Error" });
+        }
+
+        const groupedResults = results.reduce((acc, current) => {
+            const { 
+                contact_id, 
+                contact_name, 
+                contact_email, 
+                contact_number, 
+                message_type, 
+                message_content, 
+                created_at, 
+                contact_status 
+            } = current;
+
+            if (!acc[contact_email]) {
+                acc[contact_email] = {
+                    contact_id: contact_id,
+                    contact_name: contact_name,
+                    contact_email: contact_email,
+                    contact_number: contact_number,
+                    contact_status: contact_status, 
+                    contact_messages: []
+                };
+            }
+
+            acc[contact_email].contact_messages.push({
+                content: message_content,
+                type: message_type,
+                created_at: created_at
+            });
+
+            return acc;
+        }, {});
+
+        res.json(Object.values(groupedResults));
+    });
+};
+
+const getReply = (req, res) => {
+    const { contactId } = req.params;
+    const sql = 'SELECT m_sent_message FROM message_sent WHERE contact_id = ? ORDER BY m_sent_created_at ASC';
+    db.query(sql, [contactId], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results.map(row => row.m_sent_message));
+    });
+};
+
+
+
 const submitContactRequest = (req, res) => {
     const { name, email, phone, subject, message } = req.body;
 
@@ -404,54 +543,6 @@ const submitContactRequest = (req, res) => {
 
 
 
-const fetchContactRequests = (req, res) => {
-    const query = `
-        SELECT 
-            cr.contact_id, 
-            cr.contact_name, 
-            cr.contact_email, 
-            cr.contact_number, 
-            mr.m_req_message AS contact_message, 
-            cr.contact_status 
-        FROM contact_requests cr
-        LEFT JOIN message_requests mr ON cr.contact_id = mr.contact_id
-    `;
-    
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error("Error fetching contact requests:", err.message);
-            return res.status(500).json({ error: "Internal Server Error" });
-        }
-
-        const groupedResults = results.reduce((acc, current) => {
-            const { 
-                contact_id, 
-                contact_name, 
-                contact_email, 
-                contact_number, 
-                contact_message, 
-                contact_status 
-            } = current;
-
-            if (!acc[contact_email]) {
-                acc[contact_email] = {
-                    contact_id: contact_id,
-                    contact_name: contact_name,
-                    contact_email: contact_email,
-                    contact_number: contact_number,
-                    contact_status: contact_status, 
-                    contact_messages: [contact_message],
-                };
-            } else {
-                acc[contact_email].contact_messages.push(contact_message);
-            }
-
-            return acc;
-        }, {});
-
-        res.json(Object.values(groupedResults));
-    });
-};
 
 
 
@@ -557,46 +648,6 @@ const updateEmailTemplate = (req, res) => {
   
 
 
-function sendReply(req, res) {
-    const { contact_id, message } = req.body;
-  
-    if (!contact_id || !message) {
-      return res.status(400).json({ error: "contact_id and message are required" });
-    }
-  
-    const insertQuery = "INSERT INTO message_sent (contact_id, m_sent_message, m_sent_created_at) VALUES (?, ?, NOW())";
-    const insertValues = [contact_id, message];
-  
-    db.query(insertQuery, insertValues, (insertErr, insertResult) => {
-      if (insertErr) {
-        console.error("Insert error:", insertErr);
-        return res.status(500).json({ error: "Failed to send message" });
-      }
-  
-      if (insertResult.affectedRows > 0) {
-        const updateQuery = "UPDATE contact_requests SET contact_status = 'attended' WHERE contact_id = ?";
-        const updateValues = [contact_id];
-  
-        db.query(updateQuery, updateValues, (updateErr, updateResult) => {
-          if (updateErr) {
-            console.error("Update error:", updateErr);
-            return res.status(500).json({ error: "Failed to update contact status" });
-          }
-  
-          if (updateResult.affectedRows > 0) {
-            return res.status(200).json({ message: "Reply sent and status updated successfully" });
-          } else {
-            return res.status(400).json({ error: "Failed to update contact status" });
-          }
-        });
-      } else {
-        return res.status(400).json({ error: "Failed to send message" });
-      }
-    });
-  }
-  
-
-
 
 
 
@@ -685,5 +736,6 @@ module.exports = {
     updateEmailTemplate,
     sendReply,
     SetNewPassword,
-    updateAttendanceStatus
+    updateAttendanceStatus,
+    getReply
 };

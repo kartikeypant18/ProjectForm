@@ -12,6 +12,7 @@ const ContactRequest = () => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [subject, setSubject] = useState("");
   const [reply, setReply] = useState("");
+  const [sentMessages, setSentMessages] = useState({});
 
   useEffect(() => {
     axios
@@ -21,6 +22,24 @@ const ContactRequest = () => {
         console.error("Error fetching contact requests:", error)
       );
   }, []);
+
+  useEffect(() => {
+    if (selectedContact?.contact_id) {
+      axios
+        .get(
+          `http://localhost:5000/api/sent-messages/${selectedContact.contact_id}`
+        )
+        .then((response) =>
+          setSentMessages((prev) => ({
+            ...prev,
+            [selectedContact.contact_id]: response.data,
+          }))
+        )
+        .catch((error) =>
+          console.error("Error fetching sent messages:", error)
+        );
+    }
+  }, [selectedContact]);
 
   const handleIconClick = (contact) => {
     setSelectedContact({
@@ -52,9 +71,8 @@ const ContactRequest = () => {
 
     axios
       .post("http://localhost:5000/api/sendReply", replyData)
-      .then((response) => {
+      .then(() => {
         toast.success("Message sent successfully!");
-
         setContacts((prevContacts) =>
           prevContacts.map((contact) =>
             contact.contact_id === selectedContact.contact_id
@@ -62,6 +80,13 @@ const ContactRequest = () => {
               : contact
           )
         );
+        setSentMessages((prevSentMessages) => ({
+          ...prevSentMessages,
+          [selectedContact.contact_id]: [
+            ...(prevSentMessages[selectedContact.contact_id] || []),
+            reply,
+          ],
+        }));
         handleCloseDetails();
       })
       .catch((error) => {
@@ -105,20 +130,10 @@ const ContactRequest = () => {
                   <td>
                     <FaEnvelope
                       style={{
-                        cursor:
-                          contact.contact_status === "attended"
-                            ? "not-allowed"
-                            : "pointer",
-                        color:
-                          contact.contact_status === "attended"
-                            ? "gray"
-                            : "black",
+                        cursor: "pointer",
+                        color: "black",
                       }}
-                      onClick={() => {
-                        if (contact.contact_status !== "attended") {
-                          handleIconClick(contact);
-                        }
-                      }}
+                      onClick={() => handleIconClick(contact)}
                     />
                   </td>
                 </tr>
@@ -127,77 +142,35 @@ const ContactRequest = () => {
           </table>
         </>
       ) : (
-        <div className="details-container">
-          <div className="details-header">
-            <h2
-              style={{
-                padding: "15px",
-                color: "white",
-                backgroundColor: "rgb(41, 57, 95)",
-                fontWeight: "bold",
-                fontSize: "1.4rem",
-                width: "100%",
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              Message Requested
-              <button
-                className="close-details-button"
-                onClick={handleCloseDetails}
-              >
-                &times;
-              </button>
+        <div className="chat-container">
+          <div className="chat-header">
+            <h2 className="chat-title">
+              Chat with {selectedContact.contact_name}
             </h2>
+            <button className="close-chat-button" onClick={handleCloseDetails}>
+              &times;
+            </button>
           </div>
-          <table className="details-table">
-            <tbody>
-              <tr>
-                <th>ID</th>
-                <td>{selectedContact.contact_id}</td>
-              </tr>
-              <tr>
-                <th>Name</th>
-                <td>{selectedContact.contact_name}</td>
-              </tr>
-              <tr>
-                <th>Email</th>
-                <td>{selectedContact.contact_email}</td>
-              </tr>
-              <tr>
-                <th>Number</th>
-                <td>{selectedContact.contact_number}</td>
-              </tr>
-              <tr>
-                <th>Messages</th>
-                <td>
-                  <ol style={{ marginLeft: "1rem" }}>
-                    {selectedContact?.contact_messages?.length > 0 ? (
-                      selectedContact.contact_messages.map((message, index) => (
-                        <li key={index}>{message}</li>
-                      ))
-                    ) : (
-                      <li>No messages available</li>
-                    )}
-                  </ol>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <h2
-            style={{
-              padding: "15px",
-              color: "white",
-              backgroundColor: "rgb(41, 57, 95)",
-              fontWeight: "bold",
-              fontSize: "1.4rem",
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            Reply
-          </h2>
+          <div className="chat-messages">
+            <div className="messages-list">
+              {selectedContact?.contact_messages?.length > 0 ? (
+                selectedContact.contact_messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`message ${message.type}`}
+                    style={{
+                      backgroundColor:
+                        message.type === "request" ? "#a5b8cc" : "#d1e7dd", // Different colors for request and reply
+                    }}
+                  >
+                    <div className="message-content">{message.content}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="no-messages">No messages available</div>
+              )}
+            </div>
+          </div>
           <div className="reply-section">
             <input
               type="text"
@@ -214,14 +187,10 @@ const ContactRequest = () => {
                 setReply(data);
               }}
               config={{
-                placeholder: "Reply",
+                placeholder: "Write your reply here...",
               }}
             />
-            <button
-              style={{ marginTop: "1rem" }}
-              onClick={handleSendReply}
-              className="send-reply-button"
-            >
+            <button onClick={handleSendReply} className="send-reply-button">
               Send Reply
             </button>
           </div>

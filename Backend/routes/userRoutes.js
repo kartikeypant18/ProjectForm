@@ -16,7 +16,8 @@ const {
     updateEmailTemplate, // Update an email template
     sendReply, // Send a reply to a contact request
     SetNewPassword, // Set a new password for the user
-    updateAttendanceStatus, // Update the attendance status of a contact request
+    updateAttendanceStatus,
+    getReply, // Update the attendance status of a contact request
 } = require("../controllers/userController.js");
 const authenticateToken = require("../middlewares/authenticateToken.js");
 
@@ -65,13 +66,17 @@ router.get("/email-templates/:slug", fetchEmailTemplateBySlug);
 router.put("/save-email-templates/:slug", updateEmailTemplate);
 
 // Route to send a reply to a contact request
-router.post("/sendReply", sendReply);
+
 
 // Route to set a new password for the user (requires authentication)
 router.post("/setnewpassword", authenticateToken, SetNewPassword);
 
 // Route to update the attendance status of a contact request by ID
 router.patch("/contact-requests/:id", updateAttendanceStatus);
+
+router.get('/sent-messages/:contactId', getReply);
+router.post('/sendReply', sendReply);
+
 
 
 
